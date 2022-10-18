@@ -5,7 +5,7 @@ and an ImageSubsetArray.
 Do we need to modify either of these?
 """
 
-from glue.viewers.image.layer_artist import ImageLayerArtist
+from glue.viewers.image.layer_artist import ImageLayerArtist, ImageSubsetLayerArtist
 
 from glue_heatmap.state import HeatmapLayerState, HeatmapSubsetLayerState
 

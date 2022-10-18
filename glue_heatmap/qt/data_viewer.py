@@ -16,6 +16,7 @@ from glue_heatmap.qt.layer_style_editor_subset import HeatmapLayerSubsetStyleEdi
 from glue_heatmap.layer_artist import HeatmapLayerArtist, HeatmapSubsetLayerArtist
 from glue_heatmap.qt.options_widget import HeatmapOptionsWidget
 from glue_heatmap.state import HeatmapViewerState
+from glue_heatmap.viewer import MatplotlibHeatmapMixin
 
 __all__ = ['HeatmapViewer']
 
@@ -44,7 +45,7 @@ class HeatmapViewer(MatplotlibHeatmapMixin, MatplotlibDataViewer):
 
     def __init__(self, session, parent=None, state=None):
         MatplotlibDataViewer.__init__(self, session, wcs=True, parent=parent, state=state)
-        MatplotlibImageMixin.setup_callbacks(self)
+        MatplotlibHeatmapMixin.setup_callbacks(self)
 
     def closeEvent(self, *args):
         super().closeEvent(*args)
