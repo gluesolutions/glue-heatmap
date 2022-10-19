@@ -39,9 +39,8 @@ class HeatmapViewer(MatplotlibHeatmapMixin, MatplotlibDataViewer):
     #       more advanced logic.
 
     tools = ['select:rectangle', 'select:xrange',
-             'select:yrange', 'select:circle',
-             'select:polygon', 'image:point_selection', 'image:contrast_bias',
-             'profile-viewer']
+             'select:yrange', 'image:point_selection', 'image:contrast_bias',
+             ]
 
     def __init__(self, session, parent=None, state=None):
         MatplotlibDataViewer.__init__(self, session, wcs=True, parent=parent, state=state)
