@@ -6,14 +6,14 @@ from glue_heatmap.coords import HeatmapCoordinates
 from glue_heatmap.qt import HeatmapViewer
 
 def demo():
-    from glue_heatmap.qt import setup
-    setup()
+    #from glue_heatmap.qt import setup
+    #setup()
     qtl_matrix = pd.read_csv('islet_eQTL_matrix.csv').drop_duplicates(subset='marker.id')
     col_names = ['A','B','C','D','E','F','G','H']
-    x = qtl_matrix[col_names].values
+    x = qtl_matrix[col_names].values.T
     heatmap_data = Data(x=x, label='test',
-                        coords=HeatmapCoordinates(qtl_matrix['marker.id'].values, 
-                                                    col_names, 'Marker ID',  'Parent Strain'))
+                        coords=HeatmapCoordinates(qtl_matrix['marker.id'].values, col_names, 
+                                                     'Marker ID', 'Parent Strain'))
 
     dc = DataCollection([
         heatmap_data,])

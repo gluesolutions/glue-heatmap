@@ -9,6 +9,14 @@ class HeatmapCoordinates(IdentityCoordinates):
         self._x_tick_label = x_tick_label
         self._y_tick_label = y_tick_label
 
+    def get_tick_labels(self, axis_name):
+        if (axis_name == self._x_tick_label):
+            return self._x_tick_names
+        elif (axis_name == self._y_tick_label):
+            return self._y_tick_names
+        else:
+            return self._y_tick_names
+
     @property
     def world_axis_names(self):
         # Returns an iterable of strings given the names of the world

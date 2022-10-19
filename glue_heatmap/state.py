@@ -13,6 +13,7 @@ class HeatmapViewerState(ImageViewerState):
 
     def __init__(self, **kwargs):
         super().__init__()
+        HeatmapViewerState.aspect.set_choices(self, ['auto'])
 
 
 class HeatmapLayerState(ImageLayerState):

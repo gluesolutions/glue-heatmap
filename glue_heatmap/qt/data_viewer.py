@@ -2,7 +2,6 @@
 # TODO: Do we need to make custom versions of these? If so, we might need to import them
 # Import the mouse mode to make sure it gets registered
 #from glue.viewers.image.qt.contrast_mouse_mode import ContrastBiasMode  # noqa
-#from glue.viewers.image.qt.profile_viewer_tool import ProfileViewerTool  # noqa
 #from glue.viewers.image.qt.pixel_selection_mode import PixelSelectionTool  # noqa
 
 from glue.utils import defer_draw, decorate_all_methods
@@ -43,8 +42,9 @@ class HeatmapViewer(MatplotlibHeatmapMixin, MatplotlibDataViewer):
              ]
 
     def __init__(self, session, parent=None, state=None):
-        MatplotlibDataViewer.__init__(self, session, wcs=True, parent=parent, state=state)
+        MatplotlibDataViewer.__init__(self, session, wcs=False, parent=parent, state=state)
         MatplotlibHeatmapMixin.setup_callbacks(self)
+        self._wcs_set = False
 
     def closeEvent(self, *args):
         super().closeEvent(*args)
