@@ -3,6 +3,8 @@ There is a BaseImageLayerState as well which we might need to modify
 """
 
 import copy
+from glue.core import BaseData
+
 from glue.viewers.image.state import ImageViewerState, ImageLayerState, ImageSubsetLayerState
 
 __all__ = ['HeatmapViewerState', 'HeatmapLayerState', 'HeatmapSubsetLayerState']
@@ -33,9 +35,17 @@ class HeatmapViewerState(ImageViewerState):
         if self.reference_data is None:
             for layer in self.layers:
                 if isinstance(layer.layer, BaseData):
-                    self.reference_data = copy.deepcopy(layer.layer)
+                    self.reference_data = layer.layer#copy.deepcopy(layer.layer)
                     return
 
+
+    @property
+    def x_categories(self):
+        return self.reference_data.coords.get_tick_labels('x')
+
+    @property
+    def y_categories(self):
+        return self.reference_data.coords.get_tick_labels('y')
 
 
 
