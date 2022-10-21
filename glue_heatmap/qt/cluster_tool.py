@@ -25,11 +25,11 @@ class ClusterTool(CheckableTool):
         use the indices returned from this method to update the
         dataset
         """
-        data = self.viewer.state.reference_data    
+        data = self.viewer.state.reference_data
         
         #self._original_data = copy.deepcopy(data)
 
-        g = sns.clustermap(data['x']) #This should not be hard coded... I guess it should come from state
+        g = sns.clustermap(data['values']) #This should not be hard coded... I guess it should come from state
         new_row_ind = g.dendrogram_row.reordered_ind
         new_col_ind = g.dendrogram_col.reordered_ind
         
