@@ -7,6 +7,9 @@ import math
 from matplotlib.ticker import FixedLocator, FuncFormatter
 from glue.core.util import tick_linker
 
+
+from glue_heatmap.layer_artist import HeatmapLayerArtist, HeatmapSubsetLayerArtist
+
 __all__ = ['MatplotlibHeatmapMixin']
 
 
@@ -86,3 +89,19 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
             self.state.reset_limits()
 
         self._wcs_set = True
+
+    def get_data_layer_artist(self, layer=None, layer_state=None):
+        if layer.ndim == 1:
+            pass
+            #cls = self._scatter_artist
+        else:
+            cls = HeatmapLayerArtist
+        return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
+
+    def get_subset_layer_artist(self, layer=None, layer_state=None):
+        if layer.ndim == 1:
+            pass
+            #cls = self._scatter_artist
+        else:
+            cls = HeatmapSubsetLayerArtist
+        return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)

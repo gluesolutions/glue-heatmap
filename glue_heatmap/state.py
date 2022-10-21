@@ -45,7 +45,7 @@ class HeatmapLayerState(ImageLayerState):
     """
 
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(**kwargs)
 
 class HeatmapSubsetLayerState(ImageSubsetLayerState):
     """
@@ -53,4 +53,4 @@ class HeatmapSubsetLayerState(ImageSubsetLayerState):
     """
 
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(**kwargs)
