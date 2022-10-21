@@ -1,8 +1,4 @@
 from glue.viewers.image.viewer import MatplotlibImageMixin
-#from glue.core.util import update_ticks
-
-__all__ = ['MatplotlibHeatmapMixin']
-
 from itertools import count
 from functools import partial
 import numpy as np
@@ -10,6 +6,9 @@ import math
 
 from matplotlib.ticker import FixedLocator, FuncFormatter
 from glue.core.util import tick_linker
+
+__all__ = ['MatplotlibHeatmapMixin']
+
 
 def set_locator(axis_min, axis_max, tick_labels, axis):
     axis_range = math.ceil(axis_max) - math.floor(axis_min) #TODO: What is the axes ranges are flipped?
@@ -29,8 +28,8 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
         if self.state.reference_data is None:
             return
 
-        x_ticks = self.state.reference_data.coords.get_tick_labels(self.state.x_axislabel)
-        y_ticks = self.state.reference_data.coords.get_tick_labels(self.state.y_axislabel)
+        x_ticks = self.state.reference_data.coords.get_tick_labels('x')#self.state.x_axislabel)
+        y_ticks = self.state.reference_data.coords.get_tick_labels('y')#self.state.y_axislabel)
        
         set_locator(self.state.x_min, self.state.x_max, x_ticks, self.axes.xaxis)
         set_locator(self.state.y_min, self.state.y_max, y_ticks, self.axes.yaxis)
@@ -53,7 +52,7 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
 
         if self.state.x_att_world is not None:
             self.state.x_axislabel = self.state.x_att_world.label
-            x_ticks = self.state.reference_data.coords.get_tick_labels(self.state.x_axislabel) 
+            x_ticks = self.state.reference_data.coords.get_tick_labels('x')
             set_locator(0, x_ticks.shape[0], x_ticks, self.axes.xaxis)
             # We want to rotate "long" labels and expand the margins
             self.axes.tick_params(axis='x', labelrotation=90)
@@ -61,7 +60,7 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
 
         if self.state.y_att_world is not None:
             self.state.y_axislabel = self.state.y_att_world.label
-            y_ticks =self.state.reference_data.coords.get_tick_labels(self.state.y_axislabel)
+            y_ticks =self.state.reference_data.coords.get_tick_labels('y')
             set_locator(0, y_ticks.shape[0], y_ticks, self.axes.yaxis)
             # Expand the margins if the tick labels are "long"
             # self.axes.resizer.margins = [1, 0.1, 1.2, 0.1]

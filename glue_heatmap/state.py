@@ -2,9 +2,12 @@
 There is a BaseImageLayerState as well which we might need to modify
 """
 
+import copy
 from glue.viewers.image.state import ImageViewerState, ImageLayerState, ImageSubsetLayerState
 
 __all__ = ['HeatmapViewerState', 'HeatmapLayerState', 'HeatmapSubsetLayerState']
+
+
 
 class HeatmapViewerState(ImageViewerState):
     """
@@ -14,6 +17,26 @@ class HeatmapViewerState(ImageViewerState):
     def __init__(self, **kwargs):
         super().__init__()
         HeatmapViewerState.aspect.set_choices(self, ['auto'])
+
+    def _set_reference_data(self):
+        """
+        In the case of tabular data, this is where we make
+        the dataset. In the case of a 2D matrix, this
+        is where we make a copy of the dataset so that
+        clustering the data...
+
+        Well, do we want clustering the data to change
+        anything in the original data? Not really, it's
+        cosmetic, right?
+        """
+        print(f"Calling _set_reference_data...")
+        if self.reference_data is None:
+            for layer in self.layers:
+                if isinstance(layer.layer, BaseData):
+                    self.reference_data = copy.deepcopy(layer.layer)
+                    return
+
+
 
 
 class HeatmapLayerState(ImageLayerState):
