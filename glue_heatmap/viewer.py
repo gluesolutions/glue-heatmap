@@ -69,7 +69,7 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
         self.state.reset_limits()
         self.axes.figure.canvas.draw_idle()
 
-    def _set_wcs(self, event=None, relim=True): # TODO: Do we need a custom function here?
+    def _set_wcs(self, event=None, relim=True): # TODO: Do we really need this?
 
         if self.state.x_att is None or self.state.y_att is None or self.state.reference_data is None:
             return
