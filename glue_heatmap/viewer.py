@@ -6,9 +6,10 @@ import math
 
 from matplotlib.ticker import FixedLocator, FuncFormatter
 from glue.core.util import tick_linker
-
+from glue.core.data import BaseData, Data
 
 from glue_heatmap.layer_artist import HeatmapLayerArtist, HeatmapSubsetLayerArtist
+from glue_heatmap.coords import HeatmapCoordinates
 
 __all__ = ['MatplotlibHeatmapMixin']
 
@@ -23,7 +24,54 @@ def set_locator(axis_min, axis_max, tick_labels, axis):
     axis.set_major_formatter(formatter)
 
 
+def clone_subset_into_data_object(subset):
+    """
+    A helper function to clone a data object
+
+    https://stackoverflow.com/questions/39206986/numpy-get-rectangle-area-just-the-size-of-mask
+    """
+    new_data = Data()
+    old_data = subset.data
+    i,j = np.where(subset.to_mask())
+    indices = np.meshgrid(np.arange(min(i), max(i) + 1),
+                          np.arange(min(j), max(j) + 1),
+                          indexing='ij')
+    for component in old_data.main_components:
+        new_data.add_component(old_data[component][tuple(indices)],label=component.label)
+
+    if old_data.coords:
+        new_y_ticks = old_data.coords._y_tick_names[np.unique(i)]
+        new_x_ticks = old_data.coords._x_tick_names[np.unique(j)]
+        new_data.coords = HeatmapCoordinates(new_x_ticks, new_y_ticks, old_data.coords._x_tick_label, old_data.coords._y_tick_label)
+
+    new_data.label = f'{old_data.label} | {subset.label}'
+    return new_data
+
 class MatplotlibHeatmapMixin(MatplotlibImageMixin):
+
+    def add_data(self, data):
+        """
+        Heatmap Viewers work a little different because we need to create specific data
+        
+        """
+        if isinstance(data, BaseData) and data.ndim == 2: # This is a matrix object all set to go
+            print("Adding a BaseData with data.ndim == 2")
+            super().add_data(data)
+        elif isinstance(data, BaseData) and data.ndim == 1: # This is a table object
+            # Really we want to do something different here
+            super().add_data(data)
+        else: # Fallback
+            super().add_data(data)
+
+    def add_subset(self, subset):
+        if len(self.layers) == 0: #If we have just a subset all by itself we need to create a dataset
+            print("Adding just a subset, special logic applies")
+            new_data = clone_subset_into_data_object(subset)
+            self.session.data_collection.append(new_data)
+            super().add_data(new_data)
+        else:
+            super().add_subset(subset)
+
 
     def limits_from_mpl(self, *args, **kwargs):
         super().limits_from_mpl(*args, **kwargs)
