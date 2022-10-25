@@ -11,6 +11,7 @@ from glue.core.subset import roi_to_subset_state
 
 from glue_heatmap.layer_artist import HeatmapLayerArtist, HeatmapSubsetLayerArtist
 from glue_heatmap.coords import HeatmapCoordinates
+from glue.viewers.common.viewer import get_layer_artist_from_registry
 
 __all__ = ['MatplotlibHeatmapMixin']
 
@@ -24,59 +25,6 @@ def set_locator(axis_min, axis_max, tick_labels, axis):
     axis.set_major_locator(locator)
     axis.set_major_formatter(formatter)
 
-
-def get_extract_method(first_comp, mask):
-    mm = np.ma.MaskedArray(first_comp, mask=mask)
-    comp_cols = np.ma.compress_cols(mm)
-    if comp_cols.size != 0:
-        return "comp_cols"
-    comp_rows = np.ma.compress_rows(mm)
-    if comp_rows.size != 0:
-        return "comp_rows"
-    return "max_extent"
-
-def clone_subset_into_data_object(subset):
-    """
-    A helper function to clone a data object
-
-    https://stackoverflow.com/questions/39206986/numpy-get-rectangle-area-just-the-size-of-mask
-    """
-    new_data = Data()
-    old_data = subset.data
-
-    mask = subset.to_mask()
-
-    i,j = np.where(mask)
-
-    first_comp = old_data.main_components[0]
-    method = get_extract_method(old_data[first_comp], ~mask)
-
-    if method == 'max_extent':
-        indices = np.meshgrid(np.arange(min(i), max(i) + 1),
-                              np.arange(min(j), max(j) + 1),
-                              indexing='ij')
-        for component in old_data.main_components:
-            new_data.add_component(old_data[component][tuple(indices)],label=component.label)
-    elif method == 'comp_rows':
-        for component in old_data.main_components:
-            mm = np.ma.MaskedArray(old_data[component], mask = ~mask)
-            comp_rows = np.ma.compress_rows(mm)
-            new_data.add_component(comp_rows,label=component.label)
-    elif method == 'comp_cols':
-        for component in old_data.main_components:
-            mm = np.ma.MaskedArray(old_data[component], mask = ~mask)
-            comp_cols = np.ma.compress_cols(mm)
-            new_data.add_component(comp_cols,label=component.label)
-
-    if old_data.coords:
-        new_y_ticks = old_data.coords._y_tick_names[np.unique(i)]
-        new_x_ticks = old_data.coords._x_tick_names[np.unique(j)]
-        new_data.coords = HeatmapCoordinates(new_x_ticks, new_y_ticks, old_data.coords._x_tick_label, old_data.coords._y_tick_label)
-
-    new_data.label = f'{old_data.label} | {subset.label}'
-    return new_data
-
-from glue.viewers.common.viewer import get_layer_artist_from_registry
 
 class MatplotlibHeatmapMixin(MatplotlibImageMixin):
 

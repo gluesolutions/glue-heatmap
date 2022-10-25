@@ -31,11 +31,10 @@ class HeatmapViewerState(ImageViewerState):
         anything in the original data? Not really, it's
         cosmetic, right?
         """
-        print(f"Calling _set_reference_data...")
         if self.reference_data is None:
             for layer in self.layers:
                 if isinstance(layer.layer, BaseData):
-                    self.reference_data = layer.layer#copy.deepcopy(layer.layer)
+                    self.reference_data = layer.layer
                     return
 
 
