@@ -1,10 +1,8 @@
 from glue.config import viewer_tool
 from glue.viewers.common.tool import CheckableTool
 import seaborn as sns
-import copy
 import pandas as pd
 import numpy as np
-from glue.core.component_id import ComponentID, PixelComponentID
 
 @viewer_tool
 class ClusterTool(CheckableTool):
@@ -26,15 +24,18 @@ class ClusterTool(CheckableTool):
         dataset
         """
         data = self.viewer.state.reference_data
+        orig_xticks = data.coords._x_tick_names
+        orig_yticks = data.coords._y_tick_names
         
-        #self._original_data = copy.deepcopy(data)
+        self.original_components = {}
+        for component in data.main_components:
+            self.original_components[component.label] = data.get_data(component)
+        self.orig_coords = (orig_xticks, orig_yticks)
 
         g = sns.clustermap(data['values']) #This should not be hard coded... I guess it should come from state
         new_row_ind = g.dendrogram_row.reordered_ind
         new_col_ind = g.dendrogram_col.reordered_ind
         
-        orig_xticks = data.coords._x_tick_names
-        orig_yticks = data.coords._y_tick_names
 
         new_xticks = [orig_xticks[i] for i in new_col_ind]
         new_yticks = [orig_yticks[i] for i in new_row_ind]
@@ -42,9 +43,8 @@ class ClusterTool(CheckableTool):
         data.coords._x_tick_names = np.array(new_xticks)
         data.coords._y_tick_names = np.array(new_yticks)
         
-        for component in data.components:
-            if not isinstance(component, PixelComponentID):  # Ignore pixel components
-                data.update_components({component:pd.DataFrame(data.get_data(component)).iloc[new_row_ind,new_col_ind]})
+        for component in data.main_components:
+            data.update_components({component:pd.DataFrame(data.get_data(component)).iloc[new_row_ind,new_col_ind]})
         
         self.viewer._update_axes()
 
@@ -56,6 +56,15 @@ class ClusterTool(CheckableTool):
 
     def deactivate(self):
         """
+        On deactivate restore the dataset to how it was before.
+        This is a little fragile because we could have multiple Heatmap viewers
+        of the same dataset.
         """
-        pass
+        data = self.viewer.state.reference_data
+        for label, component in self.original_components.items():
+            data.update_components({data.id[label]:component})
+        data.coords._x_tick_names = self.orig_coords[0]
+        data.coords._y_tick_names = self.orig_coords[1]
+        self.viewer._update_axes()
+
         #self.viewer.state.reference_data 
