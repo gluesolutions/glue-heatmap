@@ -6,9 +6,12 @@ import math
 
 from matplotlib.ticker import FixedLocator, FuncFormatter
 from glue.core.util import tick_linker
-
+from glue.core.data import BaseData, Data
+from glue.core.subset import roi_to_subset_state
 
 from glue_heatmap.layer_artist import HeatmapLayerArtist, HeatmapSubsetLayerArtist
+from glue_heatmap.coords import HeatmapCoordinates
+from glue.viewers.common.viewer import get_layer_artist_from_registry
 
 __all__ = ['MatplotlibHeatmapMixin']
 
@@ -31,8 +34,8 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
         if self.state.reference_data is None:
             return
 
-        x_ticks = self.state.reference_data.coords.get_tick_labels('x')#self.state.x_axislabel)
-        y_ticks = self.state.reference_data.coords.get_tick_labels('y')#self.state.y_axislabel)
+        x_ticks = self.state.reference_data.coords.get_tick_labels('x')
+        y_ticks = self.state.reference_data.coords.get_tick_labels('y')
        
         set_locator(self.state.x_min, self.state.x_max, x_ticks, self.axes.xaxis)
         set_locator(self.state.y_min, self.state.y_max, y_ticks, self.axes.yaxis)
@@ -105,3 +108,20 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
         else:
             cls = HeatmapSubsetLayerArtist
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
+
+    def apply_roi(self, roi, override_mode=None):
+
+        self.redraw()
+
+        if len(self.layers) == 0:
+            return
+
+        if self.state.x_att is None or self.state.y_att is None or self.state.reference_data is None:
+            return
+
+        subset_state = roi_to_subset_state(roi,
+                                           x_att = self.state.reference_data.id['x_cats'], 
+                                           x_categories = self.state.reference_data.coords.get_tick_labels('x'),
+                                           y_att = self.state.reference_data.id['y_cats'], 
+                                           y_categories = self.state.reference_data.coords.get_tick_labels('y'))
+        self.apply_subset_state(subset_state, override_mode=override_mode)
