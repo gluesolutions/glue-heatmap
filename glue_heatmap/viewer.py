@@ -7,6 +7,7 @@ import math
 from matplotlib.ticker import FixedLocator, FuncFormatter
 from glue.core.util import tick_linker
 from glue.core.data import BaseData, Data
+from glue.core.subset import roi_to_subset_state
 
 from glue_heatmap.layer_artist import HeatmapLayerArtist, HeatmapSubsetLayerArtist
 from glue_heatmap.coords import HeatmapCoordinates
@@ -79,43 +80,14 @@ from glue.viewers.common.viewer import get_layer_artist_from_registry
 
 class MatplotlibHeatmapMixin(MatplotlibImageMixin):
 
-    def add_data(self, data):
-        """
-        Heatmap Viewers work a little different because we need to create specific data
-        
-        """
-        if isinstance(data, BaseData) and data.ndim == 2: # This is a matrix object all set to go
-            print("Adding a BaseData with data.ndim == 2")
-            result = super().add_data(data)
-        elif isinstance(data, BaseData) and data.ndim == 1: # This is a table object
-            # Really we want to do something different here
-            result = super().add_data(data)
-        else: # Fallback
-            result = super().add_data(data)
-        return result
-
-    def add_subset(self, subset):
-        if len(self.layers) == 0: #If we have just a subset all by itself we need to create a dataset
-            print("Adding just a subset, special logic applies")
-            new_data = clone_subset_into_data_object(subset)
-            collect = self.session.data_collection
-            for data_set in collect:
-                if data_set.label == new_data.label:
-                    collect.remove(data_set)
-            collect.append(new_data)
-            result = super().add_data(new_data)
-        else:
-            result = super().add_subset(subset) 
-        return result
-
     def limits_from_mpl(self, *args, **kwargs):
         super().limits_from_mpl(*args, **kwargs)
         
         if self.state.reference_data is None:
             return
 
-        x_ticks = self.state.reference_data.coords.get_tick_labels('x')#self.state.x_axislabel)
-        y_ticks = self.state.reference_data.coords.get_tick_labels('y')#self.state.y_axislabel)
+        x_ticks = self.state.reference_data.coords.get_tick_labels('x')
+        y_ticks = self.state.reference_data.coords.get_tick_labels('y')
        
         set_locator(self.state.x_min, self.state.x_max, x_ticks, self.axes.xaxis)
         set_locator(self.state.y_min, self.state.y_max, y_ticks, self.axes.yaxis)
@@ -188,3 +160,20 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
         else:
             cls = HeatmapSubsetLayerArtist
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
+
+    def apply_roi(self, roi, override_mode=None):
+
+        self.redraw()
+
+        if len(self.layers) == 0:
+            return
+
+        if self.state.x_att is None or self.state.y_att is None or self.state.reference_data is None:
+            return
+
+        subset_state = roi_to_subset_state(roi,
+                                           x_att = self.state.reference_data.id['x_cats'], 
+                                           x_categories = self.state.reference_data.coords.get_tick_labels('x'),
+                                           y_att = self.state.reference_data.id['y_cats'], 
+                                           y_categories = self.state.reference_data.coords.get_tick_labels('y'))
+        self.apply_subset_state(subset_state, override_mode=override_mode)
