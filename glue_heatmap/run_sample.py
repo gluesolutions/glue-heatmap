@@ -6,6 +6,7 @@ from glue.core.link_helpers import JoinLink, LinkSame
 
 from glue_heatmap.coords import HeatmapCoordinates
 from glue_heatmap.qt import HeatmapViewer
+from glue_heatmap.data import HeatmapData
 
 def demo():
     qtl_matrix = pd.read_csv('islet_eQTL_matrix.csv').drop_duplicates(subset = 'marker.id')
@@ -16,7 +17,7 @@ def demo():
     strain_array = np.array([strain_names for x in range(values.shape[1])]).T
     marker_array = np.array([marker_names for x in range(values.shape[0])])
 
-    heatmap_data = Data(values = values,
+    heatmap_data = HeatmapData(values = values,
                         y_cats = strain_array,
                         x_cats = marker_array,
                         label = 'test',
@@ -32,10 +33,18 @@ def demo():
 
     ga = GlueApplication(dc)
     
-    marker_link = LinkSame(heatmap_data.id['x_cats'], markers.id['markers'] )
+    marker_link = JoinLink(cids1=[heatmap_data.id['x_cats']],
+                           cids2=[markers.id['markers']],
+                           data1=heatmap_data,
+                           data2=markers)
+    #marker_link = LinkSame(heatmap_data.id['x_cats'], markers.id['markers'] )
     dc.add_link(marker_link)
 
-    strain_link = LinkSame(heatmap_data.id['y_cats'], strains.id['strain'] )
+    #strain_link = LinkSame(heatmap_data.id['y_cats'], strains.id['strain'] )
+    strain_link = JoinLink(cids1=[heatmap_data.id['y_cats']],
+                           cids2=[strains.id['strain']],
+                           data1=heatmap_data,
+                           data2=strains)
 
     dc.add_link(strain_link)
 
