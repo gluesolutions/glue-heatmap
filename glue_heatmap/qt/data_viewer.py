@@ -18,6 +18,8 @@ from glue_heatmap.qt.options_widget import HeatmapOptionsWidget
 from glue_heatmap.state import HeatmapViewerState
 from glue_heatmap.viewer import MatplotlibHeatmapMixin
 
+from .cluster_tool import ClusterToolbar
+
 __all__ = ['HeatmapViewer']
 
 
@@ -34,6 +36,8 @@ class HeatmapViewer(MatplotlibHeatmapMixin, MatplotlibDataViewer):
 
     allow_duplicate_data = False
 
+    _toolbar_cls = ClusterToolbar
+    
     # NOTE: _data_artist_cls and _subset_artist_cls are not defined - instead
     #       we override get_data_layer_artist and get_subset_layer_artist for
     #       more advanced logic.
