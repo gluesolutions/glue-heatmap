@@ -1,11 +1,22 @@
 from glue.config import viewer_tool
-from glue.viewers.common.tool import CheckableTool
+from glue.viewers.common.tool import CheckableTool, Tool
 import seaborn as sns
 import pandas as pd
 import numpy as np
 
+#@viewer_tool
+#class UnClusterTool(Tool):
+#    icon = 'glue_unlink'
+#    tool_id = 'heatmap:uncluster'
+#    action_text = 'Undo hierarchical clustering'
+#    tool_tip = 'Undo hierarchical clustering'
+#    shortcut = 'Ctrl+L'
+
+#    def __init__(self, viewer):
+#        super().__init__(viewer)
+
 @viewer_tool
-class ClusterTool(CheckableTool):
+class ClusterTool(Tool):
 
     icon = 'glue_tree'
     tool_id = 'heatmap:cluster'
@@ -15,7 +26,7 @@ class ClusterTool(CheckableTool):
 
     def __init__(self, viewer):
         super().__init__(viewer)
-
+        self.clustered = False
 
     def activate(self):
         """
@@ -23,6 +34,9 @@ class ClusterTool(CheckableTool):
         use the indices returned from this method to update the
         dataset
         """
+        if self.clustered:
+            self.deactivate()
+            return
         data = self.viewer.state.reference_data
         orig_xticks = data.coords._x_tick_names
         orig_yticks = data.coords._y_tick_names
@@ -47,9 +61,12 @@ class ClusterTool(CheckableTool):
             data.update_components({component:pd.DataFrame(data.get_data(component)).iloc[new_row_ind,new_col_ind]})
         
         self.viewer._update_axes()
+        self.clustered = True
 
 
     def close(self):
+        if self.clustered:
+            self.deactivate()
         if hasattr(self.viewer, 'window_closed'):
             self.viewer.window_closed.disconnect(self._do_close)
         self.viewer = None
@@ -66,5 +83,4 @@ class ClusterTool(CheckableTool):
         data.coords._x_tick_names = self.orig_coords[0]
         data.coords._y_tick_names = self.orig_coords[1]
         self.viewer._update_axes()
-
-        #self.viewer.state.reference_data 
+        self.clustered = False
