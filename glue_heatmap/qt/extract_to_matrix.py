@@ -147,7 +147,6 @@ class ExtractToMatrixDialog(QDialog):
                         label=f'Matrix from {data.label}',
                         coords=HeatmapCoordinates(row_names, column_names, 
                            rows.label, col_title))
-        import ipdb; ipdb.set_trace()
         data_collection.append(new_data)
 
         #row_link = LinkSame(new_data.id['x_cats'], data.id[rows] )
