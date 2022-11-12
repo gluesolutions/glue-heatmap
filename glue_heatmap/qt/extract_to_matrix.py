@@ -56,7 +56,12 @@ class ExtractToMatrixState(State):
 
 class ExtractToMatrixDialog(QDialog):
 
-    def __init__(self, collect, default=None, parent=None):
+    def __init__(self, collect,
+                default_data=None,
+                default_components=None,
+                default_row=None,
+                default_col_names=None,
+                parent=None):
 
         super().__init__(parent=parent)
 
@@ -66,8 +71,14 @@ class ExtractToMatrixDialog(QDialog):
                           directory=os.path.dirname(__file__))
         self._connections = autoconnect_callbacks_to_qt(self.state, self.ui)
 
-        if default is not None:
-            self.state.data = default
+        if default_data is not None:
+            self.state.data = default_data
+        if default_components is not None:
+            self.default_components = default_components
+        if default_row is not None:
+            self.state.row = default_row
+        if default_col_names is not None:
+            self.state.col_names = default_col_names
 
         self.ui.button_ok.clicked.connect(self.accept)
         self.ui.button_cancel.clicked.connect(self.reject)
@@ -95,7 +106,13 @@ class ExtractToMatrixDialog(QDialog):
                 item.setForeground(Qt.gray)
             else:
                 item = QListWidgetItem(component.label)
-                item.setCheckState(Qt.Checked)
+                if self.default_components is not None:
+                    if component in self.default_components:
+                        item.setCheckState(Qt.Checked)
+                    else:
+                        item.setCheckState(Qt.Unchecked)
+                else:
+                    item.setCheckState(Qt.Checked)
             self.ui.list_component.addItem(item)
 
     def _on_check_change(self, *event):
@@ -160,8 +177,10 @@ class ExtractToMatrixDialog(QDialog):
 
 
     @classmethod
-    def create_matrix(cls, collect, default=None, parent=None):
-        self = cls(collect, parent=parent, default=default)
+    def create_matrix(cls, collect, default_data=None, default_components=None,
+                      default_row=None, default_col_names=None, parent=None):
+        self = cls(collect, parent=parent, default_data=default_data,
+                   default_components=default_components, default_row=default_row, default_col_names=default_col_names)
         value = self.exec_()
 
         if value == QDialog.Accepted:
