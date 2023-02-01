@@ -1,6 +1,7 @@
 [project]
-version = "1.2"
-readme="README.md"
+name = "glue-heatmap"
+version = "1.0"
+readme = "README.md"
 
 [build-system]
 requires = ["setuptools", "wheel"]
