@@ -1,6 +1,7 @@
 import numpy as np
 from glue.core.coordinates import IdentityCoordinates
 
+
 class HeatmapCoordinates(IdentityCoordinates):
     def __init__(self, x_tick_names, y_tick_names, x_tick_label, y_tick_label):
         super().__init__(n_dim=2)
@@ -10,9 +11,9 @@ class HeatmapCoordinates(IdentityCoordinates):
         self._y_tick_label = y_tick_label
 
     def get_tick_labels(self, axis_name):
-        if (axis_name == 'x'):
+        if axis_name == "x":
             return self._x_tick_names
-        elif (axis_name == 'y'):
+        elif axis_name == "y":
             return self._y_tick_names
 
     @property

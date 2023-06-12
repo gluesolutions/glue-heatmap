@@ -2,13 +2,15 @@
 There is a BaseImageLayerState as well which we might need to modify
 """
 
-import copy
 from glue.core import BaseData
 
-from glue.viewers.image.state import ImageViewerState, ImageLayerState, ImageSubsetLayerState
+from glue.viewers.image.state import (
+    ImageViewerState,
+    ImageLayerState,
+    ImageSubsetLayerState,
+)
 
-__all__ = ['HeatmapViewerState', 'HeatmapLayerState', 'HeatmapSubsetLayerState']
-
+__all__ = ["HeatmapViewerState", "HeatmapLayerState", "HeatmapSubsetLayerState"]
 
 
 class HeatmapViewerState(ImageViewerState):
@@ -18,7 +20,7 @@ class HeatmapViewerState(ImageViewerState):
 
     def __init__(self, **kwargs):
         super().__init__()
-        HeatmapViewerState.aspect.set_choices(self, ['auto'])
+        HeatmapViewerState.aspect.set_choices(self, ["auto"])
 
     def _set_reference_data(self):
         """
@@ -37,15 +39,13 @@ class HeatmapViewerState(ImageViewerState):
                     self.reference_data = layer.layer
                     return
 
-
     @property
     def x_categories(self):
-        return self.reference_data.coords.get_tick_labels('x')
+        return self.reference_data.coords.get_tick_labels("x")
 
     @property
     def y_categories(self):
-        return self.reference_data.coords.get_tick_labels('y')
-
+        return self.reference_data.coords.get_tick_labels("y")
 
 
 class HeatmapLayerState(ImageLayerState):
@@ -55,6 +55,7 @@ class HeatmapLayerState(ImageLayerState):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
 
 class HeatmapSubsetLayerState(ImageSubsetLayerState):
     """
