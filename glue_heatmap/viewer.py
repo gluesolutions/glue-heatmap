@@ -32,8 +32,8 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
         if self.state.reference_data is None:
             return
 
-        x_ticks = self.state.reference_data.coords.get_tick_labels("x")
-        y_ticks = self.state.reference_data.coords.get_tick_labels("y")
+        x_ticks = self.state.x_categories
+        y_ticks = self.state.y_categories
 
         set_locator(self.state.x_min, self.state.x_max, x_ticks, self.axes.xaxis)
         set_locator(self.state.y_min, self.state.y_max, y_ticks, self.axes.yaxis)
@@ -55,7 +55,7 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
     def _update_axes(self, *args):
         if self.state.x_att_world is not None:
             self.state.x_axislabel = self.state.x_att_world.label
-            x_ticks = self.state.reference_data.coords.get_tick_labels("x")
+            x_ticks = self.state.x_categories
             set_locator(0, x_ticks.shape[0], x_ticks, self.axes.xaxis)
             # We want to rotate "long" labels and expand the margins
             self.axes.tick_params(axis="x", labelrotation=90)
@@ -63,7 +63,7 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
 
         if self.state.y_att_world is not None:
             self.state.y_axislabel = self.state.y_att_world.label
-            y_ticks = self.state.reference_data.coords.get_tick_labels("y")
+            y_ticks = self.state.y_categories
             set_locator(0, y_ticks.shape[0], y_ticks, self.axes.yaxis)
             # Expand the margins if the tick labels are "long"
             # self.axes.resizer.margins = [1, 0.1, 1.2, 0.1]
@@ -124,9 +124,9 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
 
         subset_state = roi_to_subset_state(
             roi,
-            x_att=self.state.reference_data.id["x_cats"],
-            x_categories=self.state.reference_data.coords.get_tick_labels("x"),
-            y_att=self.state.reference_data.id["y_cats"],
-            y_categories=self.state.reference_data.coords.get_tick_labels("y"),
+            x_att=self.state.x_att_world,
+            x_categories=self.state.x_categories,
+            y_att=self.state.y_att_world,
+            y_categories=self.state.y_categories,
         )
         self.apply_subset_state(subset_state, override_mode=override_mode)
