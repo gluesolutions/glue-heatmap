@@ -9,10 +9,7 @@ from glue.viewers.image.state import (
     ImageLayerState,
     ImageSubsetLayerState,
 )
-from glue.viewers.matplotlib.state import (DeferredDrawCallbackProperty as DDCProperty,
-                                           DeferredDrawSelectionCallbackProperty as DDSCProperty)
-
-from glue.core.message import NumericalDataChangedMessage
+from glue.viewers.matplotlib.state import (DeferredDrawSelectionCallbackProperty as DDSCProperty)
 
 from glue.core.data_combo_helper import ComboHelper
 from glue.core.exceptions import IncompatibleDataException
@@ -94,11 +91,10 @@ class HeatmapViewerState(ImageViewerState):
         if self.reference_data is not None:
             self._caculate_heatmap_data()
 
-
     @property
     def x_categories(self):
         return np.asarray(self._x_categories)
-    
+
     @property
     def y_categories(self):
         return np.asarray(self._y_categories)
@@ -118,7 +114,7 @@ class HeatmapViewerState(ImageViewerState):
         """
 
         self._heatmap_data = self.reference_data[self.reference_data.main_components[0]]
-        #print(f"{self._heatmap_data.shape=}")
+        # print(f"{self._heatmap_data.shape=}")
 
         if self.row_subset is None and self.col_subset is None:
             self._x_categories = self.reference_data.coords.get_tick_labels("x")
@@ -127,19 +123,19 @@ class HeatmapViewerState(ImageViewerState):
             unraveled_indices = np.unravel_index(self.col_subset.to_index_list(), self.reference_data.shape)
             cols_included = np.unique(unraveled_indices[1])
             self._x_categories = self.reference_data.coords.get_tick_labels("x")[cols_included]
-            #print(f"{self._x_categories=}")
+            # print(f"{self._x_categories=}")
             self._y_categories = self.reference_data.coords.get_tick_labels("y")
             self._heatmap_data = self._heatmap_data[:, cols_included]
         elif self.col_subset is None:
             unraveled_indices = np.unravel_index(self.row_subset.to_index_list(), self.reference_data.shape)
             rows_included = np.unique(unraveled_indices[0])
-            #print(f"{rows_included=}")
-            #print(f"{self.reference_data.coords.get_tick_labels('y')=}")
+            # print(f"{rows_included=}")
+            # print(f"{self.reference_data.coords.get_tick_labels('y')=}")
 
             self._x_categories = self.reference_data.coords.get_tick_labels("x")
             self._y_categories = self.reference_data.coords.get_tick_labels("y")[rows_included]
             self._heatmap_data = self._heatmap_data[rows_included, :]
-            #print(f"{self._heatmap_data.shape=}")
+            # print(f"{self._heatmap_data.shape=}")
 
         else:  # Both subsets are defined
             try:
@@ -160,14 +156,12 @@ class HeatmapViewerState(ImageViewerState):
         # Need to force the viewer to redraw now -- or at least all the layers
         # Generally we update layers in response to changes in *this* state
         # But we should be able to see what happens in reference data
-        #self.viewer.redraw()
-        # We could send a message as if the reference data has changed which 
+        # self.viewer.redraw()
+        # We could send a message as if the reference data has changed which
         # should force a redraw
         self.reset_limits()
-        #msg = NumericalDataChangedMessage(self.reference_data)
-        #self.reference_data.hub.broadcast(msg)
-
-
+        # msg = NumericalDataChangedMessage(self.reference_data)
+        # self.reference_data.hub.broadcast(msg)
 
     def _set_reference_data(self):
         """
@@ -193,7 +187,6 @@ class HeatmapViewerState(ImageViewerState):
             self._calculate_heatmap_data()
             self._sync_subsets()
 
-
     def _sync_subsets(self):
 
         if self.reference_data is None:
@@ -203,7 +196,6 @@ class HeatmapViewerState(ImageViewerState):
         subsets = [None] + list(self.reference_data.subsets)
         self.row_subset_helper.choices = subsets
         self.col_subset_helper.choices = subsets
-
 
     def reset_limits(self):
 
@@ -463,7 +455,7 @@ def compute_fixed_resolution_buffer(data, bounds, cache_id=None):
         # the result. This will allow the cache to match regardless of the
         # value for those bounds. However, we only do this for scalar bounds.
 
-        cache_bounds = bounds_for_cache(bounds, [0,1])
+        cache_bounds = bounds_for_cache(bounds, [0, 1])
 
         current_array_hash = current_array_hash[:1] + (cache_bounds,) + current_array_hash[2:]
 

@@ -1,7 +1,6 @@
 from glue.viewers.image.viewer import MatplotlibImageMixin
 from functools import partial
 import math
-from glue.viewers.matplotlib.mpl_axes import init_mpl
 
 from matplotlib.ticker import FixedLocator, FuncFormatter
 from glue.core.util import tick_linker
@@ -131,16 +130,6 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
             y_categories=self.state.y_categories,
         )
         self.apply_subset_state(subset_state, override_mode=override_mode)
-
-    #def _update_data_numerical(self, *args, **kwargs):
-    #    # We might have to do something like _update_projection
-    #    # in glue.viewers.scatter.viewer to really
-    #    # reset everything (i.e. start from scratch) when
-    #    # we update the upderlying data.#
-#
- #       super()._update_data_numerical(*args, **kwargs)
-  #      self.state._reference_data_changed(force=True)
-   #     self._reset_axes()
 
     def _add_subset(self, subset):
         super()._add_subset(subset)
