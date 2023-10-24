@@ -9,9 +9,17 @@ from glue.viewers.image.state import (
     ImageLayerState,
     ImageSubsetLayerState,
 )
+from glue.viewers.matplotlib.state import (DeferredDrawCallbackProperty as DDCProperty,
+                                           DeferredDrawSelectionCallbackProperty as DDSCProperty)
+
+from glue.core.message import NumericalDataChangedMessage
+
+from glue.core.data_combo_helper import ComboHelper
 from glue.core.exceptions import IncompatibleDataException
 from glue.utils import unbroadcast
 from glue.core.fixed_resolution_buffer import bounds_for_cache
+from glue.core.exceptions import IncompatibleAttribute
+
 from echo import SelectionCallbackProperty
 
 import numpy as np
@@ -57,51 +65,40 @@ class HeatmapViewerState(ImageViewerState):
     """
     A state class that includes all the attributes for a Heatmap Viewer
     """
-    row_subset = SelectionCallbackProperty()
-    col_subset = SelectionCallbackProperty()
+    row_subset = DDSCProperty(docstring='The subset to use for filtering rows')
+    col_subset = DDSCProperty(docstring='The subset to use for filtering columns')
 
     def __init__(self, **kwargs):
         super().__init__()
         HeatmapViewerState.aspect.set_choices(self, ["auto"])
         self._heatmap_data = None
-        # Because we are changing the data we represent, we need to
-        # manually deal with updating the tick names so that the
-        # viewer MatplotlibHeatmapMixin object gets the correct labels
-        # This could look like always getting the tick names from these
-        # private functions and dealing with updating them in
-        # _calculate_heatmap_data.
 
-        # Out ROI is going to be tricky -- well, we might just need to write
-        # our own thing from scratch. We need... to set subsets over the original
-        # attribute based on the "view" of the existing heatmap. Hmmm...
-        # Another way would be to create a view of the x_att and y_att and
-        # then apply the subset to that, but we still have to unconvert to
-        # the original subset thing. 
+        self.row_subset_helper = ComboHelper(
+            self, "row_subset"
+        )  # This should only allow subsets that are defined over genes...
 
-        # Ultimately it should not be too difficult...
-        # Maybe we can pass a view of an attribute to roi_to_subset_state?
-        # That seems like the sort of thing we should be able to do
-        # Hoepfully also the sort of thing that is easy to test
+        self.col_subset_helper = ComboHelper(
+            self, "col_subset"
+        )  # This should only allow subsets that are defined over genes...
 
-        # Yeah, I mean preliminary tests suggest that as long as I keep
-        # an updated view/way to get the subsetted x_categories and 
-        # y_categories (which can be fancy views into the original list) 
-        # then I should be golden...
+        def display_func(subset):
+            if subset is None:
+                return "None"
+            else:
+                return subset.label
 
-        # subset_state = roi_to_subset_state(
-        #     roi,
-        #     x_att=self.state.reference_data.id["x_cats"],
-        #     x_categories=self.state.reference_data.coords.get_tick_labels("x"),
-        #     y_att=self.state.reference_data.id["y_cats"],
-        #     y_categories=self.state.reference_data.coords.get_tick_labels("y"),
-        # )
+        self.row_subset_helper.choices = [None]
+        self.col_subset_helper.choices = [None]
+        self.row_subset_helper.display = display_func
+        self.col_subset_helper.display = display_func
 
+        self.add_callback('row_subset', self._calculate_heatmap_data, echo_old=True)
+        self.add_callback('col_subset', self._calculate_heatmap_data, echo_old=True)
+
+        # Changing row_subset or col_subset needs to trigger a _calculate_heatmap_data
 
         self._x_categories = []
         self._y_categories = []
-
-        self.row_subset = None
-        self.col_subset = None
 
         if self.reference_data is not None:
             self._caculate_heatmap_data()
@@ -114,28 +111,73 @@ class HeatmapViewerState(ImageViewerState):
     def y_categories(self):
         return np.asarray(self._y_categories)    
 
-    def _caculate_heatmap_data(self):
+    def _update_subset(self, before=None, after=None):
+        # A callback event for row/col_subset is triggered if the choices change
+        # but the actual selection doesn't - so we avoid doing anything in
+        # this case.
+
+        if before is after:
+            return
+        else:
+            self._calculate_heatmap_data()
+
+    def _calculate_heatmap_data(self, *args):
         """
         Call this to recalculate the heatmap data if reference_data, subset,
         x_agg, or y_agg changes
         """
+
+        #import pdb; pdb.set_trace()
         self._heatmap_data = self.reference_data[self.reference_data.main_components[0]]
+        #print(f"{self._heatmap_data.shape=}")
+
         if self.row_subset is None and self.col_subset is None:
             self._x_categories = self.reference_data.coords.get_tick_labels("x")
             self._y_categories = self.reference_data.coords.get_tick_labels("y")
         elif self.row_subset is None:
-            unraveled_indices = np.unravel_index(self.row_subset.to_index_list(), self.reference_data.shape)
+            unraveled_indices = np.unravel_index(self.col_subset.to_index_list(), self.reference_data.shape)
             cols_included = np.unique(unraveled_indices[1])
             self._x_categories = self.reference_data.coords.get_tick_labels("x")[cols_included]
+            #print(f"{self._x_categories=}")
             self._y_categories = self.reference_data.coords.get_tick_labels("y")
             self._heatmap_data = self._heatmap_data[:, cols_included]
-        else: # Both subsets are defined
+        elif self.col_subset is None:
             unraveled_indices = np.unravel_index(self.row_subset.to_index_list(), self.reference_data.shape)
-            cols_included = np.unique(unraveled_indices[1])
             rows_included = np.unique(unraveled_indices[0])
-            self._x_categories = self.reference_data.coords.get_tick_labels("x")[cols_included]
+            #print(f"{rows_included=}")
+            #print(f"{self.reference_data.coords.get_tick_labels('y')=}")
+
+            self._x_categories = self.reference_data.coords.get_tick_labels("x")
             self._y_categories = self.reference_data.coords.get_tick_labels("y")[rows_included]
+            self._heatmap_data = self._heatmap_data[rows_included, :]
+            #print(f"{self._heatmap_data.shape=}")
+
+        else:  # Both subsets are defined
+            try:
+                unraveled_indices = np.unravel_index(self.col_subset.to_index_list(), self.reference_data.shape)
+                cols_included = np.unique(unraveled_indices[1])
+                self._x_categories = self.reference_data.coords.get_tick_labels("x")[cols_included]
+            except IncompatibleAttribute:
+                self._x_categories = self.reference_data.coords.get_tick_labels("x")
+                cols_included = np.arange(self.reference_data.shape[1])
+            try:
+                unraveled_indices = np.unravel_index(self.row_subset.to_index_list(), self.reference_data.shape)
+                rows_included = np.unique(unraveled_indices[0])
+                self._y_categories = self.reference_data.coords.get_tick_labels("y")[rows_included]
+            except IncompatibleAttribute:
+                self._y_categories = self.reference_data.coords.get_tick_labels("y")
+                rows_included = np.arange(self.reference_data.shape[0])
             self._heatmap_data = self._heatmap_data[rows_included, cols_included]
+        # Need to force the viewer to redraw now -- or at least all the layers
+        # Generally we update layers in response to changes in *this* state
+        # But we should be able to see what happens in reference data
+        #self.viewer.redraw()
+        # We could send a message as if the reference data has changed which 
+        # should force a redraw
+        msg = NumericalDataChangedMessage(self.reference_data)
+        self.reference_data.hub.broadcast(msg)
+
+
 
     def _set_reference_data(self):
         """
@@ -153,36 +195,38 @@ class HeatmapViewerState(ImageViewerState):
             for layer in self.layers:
                 if isinstance(layer.layer, BaseData):
                     self.reference_data = layer.layer
-                    self._caculate_heatmap_data()
+                    self._calculate_heatmap_data()
                     self._sync_subsets()
 
                     return
         else:
-            self._caculate_heatmap_data()
+            self._calculate_heatmap_data()
             self._sync_subsets()
+
 
     def _sync_subsets(self):
 
         if self.reference_data is None:
             return
-
-        def display_func(subset):
-            if subset is None:
-                return ""
-            else:
-                return subset.label
-
         # Perhaps we should filter this list of subsets
         # in some "smart" way to be really row/col things?
         subsets = [None] + list(self.reference_data.subsets)
+        self.row_subset_helper.choices = subsets
+        self.col_subset_helper.choices = subsets
 
-        if self.row_subset is not None:
-            self.row_subset.set_choices(self, subsets)
-            self.row_subset.set_display_func(self, display_func)
-        if self.col_subset is not None:
-            self.col_subset.set_choices(self, subsets)
-            self.col_subset.set_display_func(self, display_func)
+    def _add_subset(self, subset):
+        super()._add_subset(subset)
+        self._sync_subsets()
 
+    def _remove_subset(self, subset):
+        super()._remove_subset(subset)
+        self._sync_subsets()
+
+    def _update_subset(self, subset):
+        super()._update_subset(subset)
+        self._sync_subsets()
+        # If this is one of our subsets that we already have selected
+        # we need to calculate the heatmap data again
 
 class HeatmapLayerState(ImageLayerState):
     """
@@ -313,7 +357,6 @@ def compute_fixed_resolution_buffer(data, bounds, cache_id=None):
         have as many items as there are dimensions in ``data``. Each
         item should either be a scalar value, or a tuple of ``(min, max, nsteps)``.
     """
-    print(data)
     for bound in bounds:
         if isinstance(bound, tuple) and bound[2] < 1:
             raise ValueError(f"Number of steps in bounds should be >=1 but got bound={bound}")

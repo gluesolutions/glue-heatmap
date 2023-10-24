@@ -130,3 +130,13 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
             y_categories=self.state.y_categories,
         )
         self.apply_subset_state(subset_state, override_mode=override_mode)
+
+    def _update_data_numerical(self, *args, **kwargs):
+        # We might have to do somsething like _update_projection
+        # in glue.viewers.scatter.viewer to really
+        # reset everything (i.e. start from scratch) when
+        # we update the upderlying data.
+
+        super()._update_data_numerical(*args, **kwargs)
+        self.state._reference_data_changed(force=True)
+        self._update_axes()

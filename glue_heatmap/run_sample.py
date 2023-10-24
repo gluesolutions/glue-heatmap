@@ -28,8 +28,8 @@ def demo():
             marker_names, strain_names, "Marker Name", "Parent Strain"
         ),
     )
-    strains = Data(strain=["A", "B", "C"], label="strains")
-    markers = Data(markers=["6_125562888", "9_50632541"], label="markers")
+    strains = Data(strain=["A", "B", "C", "D", "E"], label="strains")
+    markers = Data(markers=["6_125562888", "9_50632541", "16_26087386", "2_59628224"], label="markers")
 
     dc = DataCollection([heatmap_data, strains, markers])
 
