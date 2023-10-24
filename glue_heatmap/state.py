@@ -19,8 +19,7 @@ from glue.core.exceptions import IncompatibleDataException
 from glue.utils import unbroadcast
 from glue.core.fixed_resolution_buffer import bounds_for_cache
 from glue.core.exceptions import IncompatibleAttribute
-
-from echo import SelectionCallbackProperty
+from echo import delay_callback
 
 import numpy as np
 
@@ -72,14 +71,8 @@ class HeatmapViewerState(ImageViewerState):
         super().__init__()
         HeatmapViewerState.aspect.set_choices(self, ["auto"])
         self._heatmap_data = None
-
-        self.row_subset_helper = ComboHelper(
-            self, "row_subset"
-        )  # This should only allow subsets that are defined over genes...
-
-        self.col_subset_helper = ComboHelper(
-            self, "col_subset"
-        )  # This should only allow subsets that are defined over genes...
+        self.row_subset_helper = ComboHelper(self, "row_subset")
+        self.col_subset_helper = ComboHelper(self, "col_subset")
 
         def display_func(subset):
             if subset is None:
@@ -92,10 +85,8 @@ class HeatmapViewerState(ImageViewerState):
         self.row_subset_helper.display = display_func
         self.col_subset_helper.display = display_func
 
-        self.add_callback('row_subset', self._calculate_heatmap_data, echo_old=True)
-        self.add_callback('col_subset', self._calculate_heatmap_data, echo_old=True)
-
-        # Changing row_subset or col_subset needs to trigger a _calculate_heatmap_data
+        self.add_callback('row_subset', self._update_selected_subset, echo_old=True)
+        self.add_callback('col_subset', self._update_selected_subset, echo_old=True)
 
         self._x_categories = []
         self._y_categories = []
@@ -103,31 +94,29 @@ class HeatmapViewerState(ImageViewerState):
         if self.reference_data is not None:
             self._caculate_heatmap_data()
 
+
     @property
     def x_categories(self):
         return np.asarray(self._x_categories)
     
     @property
     def y_categories(self):
-        return np.asarray(self._y_categories)    
+        return np.asarray(self._y_categories)
 
-    def _update_subset(self, before=None, after=None):
-        # A callback event for row/col_subset is triggered if the choices change
-        # but the actual selection doesn't - so we avoid doing anything in
+    def _update_selected_subset(self, before=None, after=None, **kwargs):
+        # A callback event for row/col_subset may be triggered if the choices
+        # change but the actual selection doesn't - so we avoid doing anything in
         # this case.
-
-        if before is after:
+        if after is not None and after is before:
             return
-        else:
-            self._calculate_heatmap_data()
+        self._calculate_heatmap_data()
 
-    def _calculate_heatmap_data(self, *args):
+    def _calculate_heatmap_data(self, *args, **kwargs):
         """
         Call this to recalculate the heatmap data if reference_data, subset,
         x_agg, or y_agg changes
         """
 
-        #import pdb; pdb.set_trace()
         self._heatmap_data = self.reference_data[self.reference_data.main_components[0]]
         #print(f"{self._heatmap_data.shape=}")
 
@@ -174,8 +163,9 @@ class HeatmapViewerState(ImageViewerState):
         #self.viewer.redraw()
         # We could send a message as if the reference data has changed which 
         # should force a redraw
-        msg = NumericalDataChangedMessage(self.reference_data)
-        self.reference_data.hub.broadcast(msg)
+        self.reset_limits()
+        #msg = NumericalDataChangedMessage(self.reference_data)
+        #self.reference_data.hub.broadcast(msg)
 
 
 
@@ -214,19 +204,24 @@ class HeatmapViewerState(ImageViewerState):
         self.row_subset_helper.choices = subsets
         self.col_subset_helper.choices = subsets
 
-    def _add_subset(self, subset):
-        super()._add_subset(subset)
-        self._sync_subsets()
 
-    def _remove_subset(self, subset):
-        super()._remove_subset(subset)
-        self._sync_subsets()
+    def reset_limits(self):
 
-    def _update_subset(self, subset):
-        super()._update_subset(subset)
-        self._sync_subsets()
-        # If this is one of our subsets that we already have selected
-        # we need to calculate the heatmap data again
+        if self._heatmap_data is None or self.x_att is None or self.y_att is None:
+            return
+
+        nx = self._heatmap_data.shape[self.x_att.axis]
+        ny = self._heatmap_data.shape[self.y_att.axis]
+
+        with delay_callback(self, 'x_min', 'x_max', 'y_min', 'y_max'):
+            self.x_min = -0.5
+            self.x_max = nx - 0.5
+            self.y_min = -0.5
+            self.y_max = ny - 0.5
+            # We need to adjust the limits in here to avoid triggering all
+            # the update events then changing the limits again.
+            self._adjust_limits_aspect()
+
 
 class HeatmapLayerState(ImageLayerState):
     """
