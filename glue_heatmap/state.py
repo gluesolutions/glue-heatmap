@@ -106,6 +106,16 @@ class HeatmapViewerState(ImageViewerState):
         # this case.
         if after is not None and after is before:
             return
+        # We make a subset not visible if it is the one that we use to subset
+        # the data, because the subset mask is just the whole data in that 
+        # case. The user can toggle it back on if they want to.
+        for layer in self.layers:
+            if not isinstance(layer.layer, BaseData):
+                if layer.layer is after:
+                    layer.visible = False
+                if layer.layer is before:
+                    layer.visible = True
+
         self._calculate_heatmap_data()
 
     def _calculate_heatmap_data(self, *args, **kwargs):
@@ -124,38 +134,38 @@ class HeatmapViewerState(ImageViewerState):
             self._y_categories = self.reference_data.coords.get_tick_labels("y")
         elif self.row_subset is None:
             unraveled_indices = np.unravel_index(self.col_subset.to_index_list(), self.reference_data.shape)
-            cols_included = np.unique(unraveled_indices[1])
-            self._x_categories = self.reference_data.coords.get_tick_labels("x")[cols_included]
+            self.cols_included = np.unique(unraveled_indices[1])
+            self._x_categories = self.reference_data.coords.get_tick_labels("x")[self.cols_included]
             # print(f"{self._x_categories=}")
             self._y_categories = self.reference_data.coords.get_tick_labels("y")
-            self._heatmap_data = self._heatmap_data[:, cols_included]
+            self._heatmap_data = self._heatmap_data[:, self.cols_included]
         elif self.col_subset is None:
             unraveled_indices = np.unravel_index(self.row_subset.to_index_list(), self.reference_data.shape)
-            rows_included = np.unique(unraveled_indices[0])
+            self.rows_included = np.unique(unraveled_indices[0])
             # print(f"{rows_included=}")
             # print(f"{self.reference_data.coords.get_tick_labels('y')=}")
 
             self._x_categories = self.reference_data.coords.get_tick_labels("x")
-            self._y_categories = self.reference_data.coords.get_tick_labels("y")[rows_included]
-            self._heatmap_data = self._heatmap_data[rows_included, :]
+            self._y_categories = self.reference_data.coords.get_tick_labels("y")[self.rows_included]
+            self._heatmap_data = self._heatmap_data[self.rows_included, :]
             # print(f"{self._heatmap_data.shape=}")
 
         else:  # Both subsets are defined
             try:
                 unraveled_indices = np.unravel_index(self.col_subset.to_index_list(), self.reference_data.shape)
-                cols_included = np.unique(unraveled_indices[1])
-                self._x_categories = self.reference_data.coords.get_tick_labels("x")[cols_included]
+                self.cols_included = np.unique(unraveled_indices[1])
+                self._x_categories = self.reference_data.coords.get_tick_labels("x")[self.cols_included]
             except IncompatibleAttribute:
                 self._x_categories = self.reference_data.coords.get_tick_labels("x")
-                cols_included = np.arange(self.reference_data.shape[1])
+                self.cols_included = np.arange(self.reference_data.shape[1])
             try:
                 unraveled_indices = np.unravel_index(self.row_subset.to_index_list(), self.reference_data.shape)
-                rows_included = np.unique(unraveled_indices[0])
-                self._y_categories = self.reference_data.coords.get_tick_labels("y")[rows_included]
+                self.rows_included = np.unique(unraveled_indices[0])
+                self._y_categories = self.reference_data.coords.get_tick_labels("y")[self.rows_included]
             except IncompatibleAttribute:
                 self._y_categories = self.reference_data.coords.get_tick_labels("y")
-                rows_included = np.arange(self.reference_data.shape[0])
-            self._heatmap_data = self._heatmap_data[rows_included, cols_included]
+                self.rows_included = np.arange(self.reference_data.shape[0])
+            self._heatmap_data = self._heatmap_data[self.rows_included, :][:, self.cols_included]
         # Need to force the viewer to redraw now -- or at least all the layers
         # Generally we update layers in response to changes in *this* state
         # But we should be able to see what happens in reference data
@@ -450,9 +460,9 @@ def compute_fixed_resolution_buffer(data, bounds, subset_state=None, ref_state=N
         array = data[translated_coords].astype(float)
         invalid_value = -np.inf
     else:
-        og_mask = ref_state.reference_data.get_mask(subset_state) # This is the mask on the original data
-        mask_red = og_mask[ref_state.rows_included, ref_state.cols_included] # convert from full size to heatmap
-        array = mask_red[translated_coords] # Downsample 
+        og_mask = ref_state.reference_data.get_mask(subset_state)  # This is the mask on the original data
+        mask_red = og_mask[ref_state.rows_included,:][:,ref_state.cols_included]  # convert from full size to heatmap
+        array = mask_red[translated_coords]  # Downsample 
         invalid_value = False
 
     if np.any(invalid_all):

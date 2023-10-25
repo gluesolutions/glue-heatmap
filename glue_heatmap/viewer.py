@@ -144,3 +144,4 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
         self.state._sync_subsets()
         if subset.subset is self.state.row_subset or subset.subset is self.state.col_subset:
             self.state._calculate_heatmap_data()
+            self._update_axes()
