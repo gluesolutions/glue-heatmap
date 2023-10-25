@@ -1,5 +1,5 @@
 import pandas as pd
-import numpy as np
+# import numpy as np
 from glue.core import Data, DataCollection
 from glue.app.qt import GlueApplication
 from glue.core.link_helpers import LinkSame
@@ -16,13 +16,11 @@ def demo():
     values = qtl_matrix[strain_names].values.T
     marker_names = qtl_matrix["marker.id"].values
 
-    strain_array = np.array([strain_names for x in range(values.shape[1])]).T
-    marker_array = np.array([marker_names for x in range(values.shape[0])])
+    # strain_array = np.array([strain_names for x in range(values.shape[1])]).T
+    # marker_array = np.array([marker_names for x in range(values.shape[0])])
 
     heatmap_data = Data(
         values=values,
-        y_cats=strain_array,
-        x_cats=marker_array,
         label="test",
         coords=HeatmapCoordinates(
             marker_names, strain_names, "Marker Name", "Parent Strain"
@@ -35,10 +33,10 @@ def demo():
 
     ga = GlueApplication(dc)
 
-    marker_link = LinkSame(heatmap_data.id["x_cats"], markers.id["markers"])
+    marker_link = LinkSame(heatmap_data.id["Marker Name"], markers.id["markers"])
     dc.add_link(marker_link)
 
-    strain_link = LinkSame(heatmap_data.id["y_cats"], strains.id["strain"])
+    strain_link = LinkSame(heatmap_data.id["Parent Strain"], strains.id["strain"])
 
     dc.add_link(strain_link)
 

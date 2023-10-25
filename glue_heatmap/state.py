@@ -461,7 +461,7 @@ def compute_fixed_resolution_buffer(data, bounds, subset_state=None, ref_state=N
         invalid_value = -np.inf
     else:
         og_mask = ref_state.reference_data.get_mask(subset_state)  # This is the mask on the original data
-        mask_red = og_mask[ref_state.rows_included,:][:,ref_state.cols_included]  # convert from full size to heatmap
+        mask_red = og_mask[ref_state.rows_included, :][:, ref_state.cols_included]  # convert from full size to heatmap
         array = mask_red[translated_coords]  # Downsample 
         invalid_value = False
 

@@ -7,6 +7,7 @@ class HeatmapCoordinates(IdentityCoordinates):
         super().__init__(n_dim=2)
         self._x_tick_names = np.array(x_tick_names)
         self._y_tick_names = np.array(y_tick_names)
+        self._names = [self._x_tick_names, self._y_tick_names]
         self._x_tick_label = x_tick_label
         self._y_tick_label = y_tick_label
 
@@ -15,6 +16,12 @@ class HeatmapCoordinates(IdentityCoordinates):
             return self._x_tick_names
         elif axis_name == "y":
             return self._y_tick_names
+
+    def pixel_to_world_values(self, *args):
+        return tuple([self._names[i][np.round(x)] for i, x in enumerate(args)])
+
+    def world_to_pixel_values(self, *args):
+        return tuple([self._names[i].index(x) for i, x in enumerate(args)])
 
     @property
     def world_axis_names(self):
