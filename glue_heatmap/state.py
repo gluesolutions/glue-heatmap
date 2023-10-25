@@ -125,56 +125,27 @@ class HeatmapViewerState(ImageViewerState):
         """
 
         self._heatmap_data = self.reference_data[self.reference_data.main_components[0]]
-        # print(f"{self._heatmap_data.shape=}")
         self.rows_included = np.arange(self._heatmap_data.shape[0])
         self.cols_included = np.arange(self._heatmap_data.shape[1])
-        
-        if self.row_subset is None and self.col_subset is None:
-            self._x_categories = self.reference_data.coords.get_tick_labels("x")
-            self._y_categories = self.reference_data.coords.get_tick_labels("y")
-        elif self.row_subset is None:
-            unraveled_indices = np.unravel_index(self.col_subset.to_index_list(), self.reference_data.shape)
-            self.cols_included = np.unique(unraveled_indices[1])
-            self._x_categories = self.reference_data.coords.get_tick_labels("x")[self.cols_included]
-            # print(f"{self._x_categories=}")
-            self._y_categories = self.reference_data.coords.get_tick_labels("y")
-            self._heatmap_data = self._heatmap_data[:, self.cols_included]
-        elif self.col_subset is None:
-            unraveled_indices = np.unravel_index(self.row_subset.to_index_list(), self.reference_data.shape)
-            self.rows_included = np.unique(unraveled_indices[0])
-            # print(f"{rows_included=}")
-            # print(f"{self.reference_data.coords.get_tick_labels('y')=}")
 
-            self._x_categories = self.reference_data.coords.get_tick_labels("x")
-            self._y_categories = self.reference_data.coords.get_tick_labels("y")[self.rows_included]
-            self._heatmap_data = self._heatmap_data[self.rows_included, :]
-            # print(f"{self._heatmap_data.shape=}")
-
-        else:  # Both subsets are defined
-            try:
-                unraveled_indices = np.unravel_index(self.col_subset.to_index_list(), self.reference_data.shape)
-                self.cols_included = np.unique(unraveled_indices[1])
-                self._x_categories = self.reference_data.coords.get_tick_labels("x")[self.cols_included]
-            except IncompatibleAttribute:
-                self._x_categories = self.reference_data.coords.get_tick_labels("x")
-                self.cols_included = np.arange(self.reference_data.shape[1])
+        if self.row_subset is not None:
             try:
                 unraveled_indices = np.unravel_index(self.row_subset.to_index_list(), self.reference_data.shape)
                 self.rows_included = np.unique(unraveled_indices[0])
-                self._y_categories = self.reference_data.coords.get_tick_labels("y")[self.rows_included]
             except IncompatibleAttribute:
-                self._y_categories = self.reference_data.coords.get_tick_labels("y")
-                self.rows_included = np.arange(self.reference_data.shape[0])
-            self._heatmap_data = self._heatmap_data[self.rows_included, :][:, self.cols_included]
-        # Need to force the viewer to redraw now -- or at least all the layers
-        # Generally we update layers in response to changes in *this* state
-        # But we should be able to see what happens in reference data
-        # self.viewer.redraw()
-        # We could send a message as if the reference data has changed which
-        # should force a redraw
+                pass
+        if self.col_subset is not None:
+            try:
+                unraveled_indices = np.unravel_index(self.col_subset.to_index_list(), self.reference_data.shape)
+                self.cols_included = np.unique(unraveled_indices[1])
+            except IncompatibleAttribute:
+                pass
+
+        self._x_categories = self.reference_data.coords.get_tick_labels("x")[self.cols_included]
+        self._y_categories = self.reference_data.coords.get_tick_labels("y")[self.rows_included]
+        self._heatmap_data = self._heatmap_data[self.rows_included, :][:, self.cols_included]
+
         self.reset_limits()
-        # msg = NumericalDataChangedMessage(self.reference_data)
-        # self.reference_data.hub.broadcast(msg)
 
     def _set_reference_data(self):
         """
