@@ -8,6 +8,7 @@ from glue.viewers.image.state import (
     ImageViewerState,
     ImageLayerState,
     ImageSubsetLayerState,
+    BaseImageLayerState
 )
 from glue.viewers.matplotlib.state import (DeferredDrawSelectionCallbackProperty as DDSCProperty)
 
@@ -115,7 +116,9 @@ class HeatmapViewerState(ImageViewerState):
 
         self._heatmap_data = self.reference_data[self.reference_data.main_components[0]]
         # print(f"{self._heatmap_data.shape=}")
-
+        self.rows_included = np.arange(self._heatmap_data.shape[0])
+        self.cols_included = np.arange(self._heatmap_data.shape[1])
+        
         if self.row_subset is None and self.col_subset is None:
             self._x_categories = self.reference_data.coords.get_tick_labels("x")
             self._y_categories = self.reference_data.coords.get_tick_labels("y")
@@ -215,17 +218,8 @@ class HeatmapViewerState(ImageViewerState):
             self._adjust_limits_aspect()
 
 
-class HeatmapLayerState(ImageLayerState):
-    """
-    A state class that includes all the attributes for data layers in a Heatmap Viewer
-    """
+class BaseHeatmapLayerState(BaseImageLayerState):
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    # This can be dramatically simplified if we assume we do not
-    # need all the slicing stuff -- although the name probably needs to
-    # stay the same, which is slightly anacronistic
     def get_sliced_data(self, view=None, bounds=None):
         """
         Override BaseImageLayerState.get_sliced_data to return just the
@@ -233,6 +227,7 @@ class HeatmapLayerState(ImageLayerState):
         """
         if self.viewer_state._heatmap_data is None:
             return
+
         full_view, agg_func, transpose = self.viewer_state.numpy_slice_aggregation_transpose
 
         x_axis = self.viewer_state.x_att.axis
@@ -278,10 +273,11 @@ class HeatmapLayerState(ImageLayerState):
         # We now get the fixed resolution buffer
 
         if isinstance(self.layer, BaseData):
-            if self.viewer_state._heatmap_data is not None:
-                image = compute_fixed_resolution_buffer(self.viewer_state._heatmap_data, full_view)
+            image = compute_fixed_resolution_buffer(self.viewer_state._heatmap_data, full_view)
         else:
-            raise NotImplementedError()
+            image = compute_fixed_resolution_buffer(self.viewer_state._heatmap_data,
+                                                    full_view, subset_state=self.layer.subset_state,
+                                                    ref_state=self.viewer_state)
 
         # We apply aggregation functions if needed
 
@@ -308,6 +304,19 @@ class HeatmapLayerState(ImageLayerState):
 
         return image
 
+
+class HeatmapLayerState(BaseHeatmapLayerState, ImageLayerState):
+    """
+    A state class that includes all the attributes for data layers in a Heatmap Viewer
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    # This can be dramatically simplified if we assume we do not
+    # need all the slicing stuff -- although the name probably needs to
+    # stay the same, which is slightly anacronistic
+
     @property
     def x_categories(self):
         return self.reference_data.coords.get_tick_labels("x")
@@ -317,7 +326,7 @@ class HeatmapLayerState(ImageLayerState):
         return self.reference_data.coords.get_tick_labels("y")
 
 
-class HeatmapSubsetLayerState(ImageSubsetLayerState):
+class HeatmapSubsetLayerState(BaseHeatmapLayerState, ImageSubsetLayerState):
     """
     A state class that includes all the attributes for subset layers in Heatmap Viewer
     """
@@ -331,7 +340,7 @@ ARRAY_CACHE = {}
 PIXEL_CACHE = {}
 
 
-def compute_fixed_resolution_buffer(data, bounds, cache_id=None):
+def compute_fixed_resolution_buffer(data, bounds, subset_state=None, ref_state=None, cache_id=None):
     """
     Get a fixed-resolution buffer for a 2D array.
 
@@ -343,6 +352,12 @@ def compute_fixed_resolution_buffer(data, bounds, cache_id=None):
         The list of bounds for the fixed resolution buffer. This list should
         have as many items as there are dimensions in ``data``. Each
         item should either be a scalar value, or a tuple of ``(min, max, nsteps)``.
+    subset_state : `~glue.core.subset.SubsetState`, optional
+        If specified, a subset state to apply to the data before extracting
+        the fixed resolution buffer.
+    ref_state : State object,  optional
+        If specified, a state object that allows us to convert a subset state
+        into a mask on the heatmap
     """
     for bound in bounds:
         if isinstance(bound, tuple) and bound[2] < 1:
@@ -431,8 +446,14 @@ def compute_fixed_resolution_buffer(data, bounds, cache_id=None):
 
     translated_coords = tuple(translated_coords)
 
-    array = data[translated_coords].astype(float)
-    invalid_value = -np.inf
+    if subset_state is None:
+        array = data[translated_coords].astype(float)
+        invalid_value = -np.inf
+    else:
+        og_mask = ref_state.reference_data.get_mask(subset_state) # This is the mask on the original data
+        mask_red = og_mask[ref_state.rows_included, ref_state.cols_included] # convert from full size to heatmap
+        array = mask_red[translated_coords] # Downsample 
+        invalid_value = False
 
     if np.any(invalid_all):
         if not array.flags.writeable:
