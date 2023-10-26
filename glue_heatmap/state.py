@@ -1,7 +1,3 @@
-"""
-There is a BaseImageLayerState as well which we might need to modify
-"""
-
 from glue.core import BaseData
 
 from glue.viewers.image.state import (
@@ -27,44 +23,28 @@ import numpy as np
 __all__ = ["HeatmapViewerState", "HeatmapLayerState", "HeatmapSubsetLayerState"]
 
 
-# class HeatmapViewerState(MatplotlibDataViewerState):
-#     """
-
-#     """
-
-#     reference_data = DDSCProperty(docstring='The dataset that is used to define the '
-#                                             'available x_agg and y_agg components as '
-#                                             'well as the subsets to display')
-#     rows = DDSCProperty(docstring='The component ID in reference_data that will be '
-#                                   'displayed as the rows of the heatmap.')
-#     cols = DDSCProperty(docstring='The component ID in reference_data that will be '
-#                                     'displayed as the columns of the heatmap.')
-
-#     aggregation = DDSCProperty(docstring='The aggregation function to apply'
-#                                             'on values to generate the heatmap.'
-#                                             'Must be count if values is None.')
-#     values = DDSCProperty(docstring='The component ID in reference_data that will be '
-#                                     'aggregated over to generate the heatmap. If None, '
-#                                     'the count of each row/col combination is used.')
-
-#     def __init__(self, **kwargs):
-#         super().__init__()
-#         self.heatmap_data = None # This is the data that is actually plotted
-
-#     def _calculate_heatmap_data(self):
-#         """
-#         Call this to recalculate the heatmap data if reference_data, subset,
-#         x_agg, or y_agg changes
-#         """
-#         pass
-
-#     def _set_reference_data(self):
-#         pass
-
 class HeatmapViewerState(ImageViewerState):
     """
-    A state class that includes all the attributes for a Heatmap Viewer
+    A state class that includes all the attributes for a Heatmap Viewer.
+
+    A HeatmapViewer will ultimately be able to display both a 2D matrix
+    of values (for a dataset with HeatmapCoordinates) and a heatmap generated
+    from 1D tabular data. For now, we have focused on the 2D matrix case.
     """
+#    reference_data = DDSCProperty(docstring='The dataset that is used to define the '
+#                                             'available x_agg and y_agg components as '
+#                                             'well as the subsets to display')
+#    rows = DDSCProperty(docstring='The component ID in reference_data that will be '
+#                                   'displayed as the rows of the heatmap.')
+#    cols = DDSCProperty(docstring='The component ID in reference_data that will be '
+#                                     'displayed as the columns of the heatmap.')
+#
+#    aggregation = DDSCProperty(docstring='The aggregation function to apply'
+#                                             'on values to generate the heatmap.'
+#                                             'Must be count if values is None.')
+#    values = DDSCProperty(docstring='The component ID in reference_data that will be '
+#                                     'aggregated over to generate the heatmap. If None, '
+#                                     'the count of each row/col combination is used.')
     row_subset = DDSCProperty(docstring='The subset to use for filtering rows')
     col_subset = DDSCProperty(docstring='The subset to use for filtering columns')
 
@@ -106,13 +86,19 @@ class HeatmapViewerState(ImageViewerState):
         return np.asarray(self._y_categories)
 
     def _update_selected_subset(self, before=None, after=None, **kwargs):
+        """
+        Callback for changing the selected subsets for filtering row/col.
+
+        As long as the subset has actually changed, we need to recalculate
+        the heatmap data.
+        """
         # A callback event for row/col_subset may be triggered if the choices
         # change but the actual selection doesn't - so we avoid doing anything in
         # this case.
         if after is before:
             return
         # We make a subset not visible if it is the one that we use to subset
-        # the data, because the subset mask is just the whole data in that 
+        # the data, because the subset mask is just the whole data in that
         # case. The user can toggle it back on if they want to.
         for layer in self.layers:
             if not isinstance(layer.layer, BaseData):
@@ -120,21 +106,19 @@ class HeatmapViewerState(ImageViewerState):
                     layer.visible = False
                 if layer.layer is before:
                     layer.visible = True
-
         self._calculate_heatmap_data()
 
     def _calculate_heatmap_data(self, *args, **kwargs):
         """
-        Call this to recalculate the heatmap data if reference_data, subset,
-        x_agg, or y_agg changes
+        Call this to recalculate the heatmap data if reference_data, row_subset, or
+        col_subset changes. In the 1D case this will also be called if rows, cols,
+        aggregation or values changes.
 
-        What if we do something that really requires us to recalculate the heatmap
-        and we have clustering applied? Basically, whenever we recalculate this
-        we have lost the original clustering and must deactivate it.
-
+        If we are recalculating the heatmap, then we disable clustering (since the
+        old clustering is not necessarily valie for the new data array and we want
+        it to be obvious to the user that they need to recluster).
         """
         self.cluster = False
-        #import pdb; pdb.set_trace()
         self._heatmap_data = self.reference_data[self.reference_data.main_components[0]]
         self.rows_included = np.arange(self._heatmap_data.shape[0])
         self.cols_included = np.arange(self._heatmap_data.shape[1])
@@ -160,6 +144,8 @@ class HeatmapViewerState(ImageViewerState):
 
     def _set_reference_data(self):
         """
+        Set the reference data for the viewer and calculate
+        the heatmap and available subsets.
         """
         if self.reference_data is None:
             for layer in self.layers:
@@ -174,7 +160,15 @@ class HeatmapViewerState(ImageViewerState):
             self._sync_subsets()
 
     def _sync_subsets(self):
+        """
+        Generate a list of subsets to display as options for filtering.
 
+        Currently, this just takes all subsets in the data collection,
+        but in theory we could try to be smart and only show subsets
+        that are defined on reference_data and/or show subsets that
+        are meaningful for filtering rows/cols (though this is not
+        necessarily well-defined).
+        """
         if self.reference_data is None:
             return
         # Perhaps we should filter this list of subsets
@@ -201,6 +195,12 @@ class HeatmapViewerState(ImageViewerState):
             self._adjust_limits_aspect()
 
     def _do_cluster(self, *args):
+        """
+        Apply hierarchical clustering to the heatmap data.
+
+        We preserve the unclustered data and coordinates so that we can
+        revert to the original data if the user toggles clustering off.
+        """
         if self.cluster:
             data = self._heatmap_data
             orig_xticks = self._x_categories
@@ -237,15 +237,16 @@ class HeatmapViewerState(ImageViewerState):
 
 
 class BaseHeatmapLayerState(BaseImageLayerState):
-
-    # This can be dramatically simplified if we assume we do not
-    # need all the slicing stuff -- although the name probably needs to
-    # stay the same, which is slightly anacronistic
+    """
+    To reuse most of the ImageViewer we simply override the get_sliced_data
+    method here to return the heatmap data. We can dramatically simplify this
+    to remove all the slicing stuff, although the name needs to stay the same.
+    """
 
     def get_sliced_data(self, view=None, bounds=None):
         """
         Override BaseImageLayerState.get_sliced_data to return just the
-        underlying 2D dataset associated with the
+        underlying heatmap array.
         """
         if self.viewer_state._heatmap_data is None:
             return
@@ -353,6 +354,9 @@ PIXEL_CACHE = {}
 def compute_fixed_resolution_buffer(data, bounds, subset_state=None, ref_state=None, cache_id=None):
     """
     Get a fixed-resolution buffer for a 2D array.
+
+    This is a replacement for glue.core.fixed_resolution_buffer.compute_fixed_resolution_buffer
+    which works on a 2D numpy array and subsets associated with HeatmapViewerState objects.
 
     Parameters
     ----------
@@ -462,7 +466,7 @@ def compute_fixed_resolution_buffer(data, bounds, subset_state=None, ref_state=N
     else:
         og_mask = ref_state.reference_data.get_mask(subset_state)  # This is the mask on the original data
         mask_red = og_mask[ref_state.rows_included, :][:, ref_state.cols_included]  # convert from full size to heatmap
-        array = mask_red[translated_coords]  # Downsample 
+        array = mask_red[translated_coords]  # Downsample
         invalid_value = False
 
     if np.any(invalid_all):
