@@ -121,7 +121,6 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
             or self.state.reference_data is None
         ):
             return
-
         subset_state = roi_to_subset_state(
             roi,
             x_att=self.state.x_att_world,

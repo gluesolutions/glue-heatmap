@@ -10,7 +10,8 @@ from glue.viewers.image.state import (
     ImageSubsetLayerState,
     BaseImageLayerState
 )
-from glue.viewers.matplotlib.state import (DeferredDrawSelectionCallbackProperty as DDSCProperty)
+from glue.viewers.matplotlib.state import (DeferredDrawSelectionCallbackProperty as DDSCProperty,
+                                           DeferredDrawCallbackProperty as DDCProperty)
 
 from glue.core.data_combo_helper import ComboHelper
 from glue.core.exceptions import IncompatibleDataException
@@ -18,6 +19,7 @@ from glue.utils import unbroadcast
 from glue.core.fixed_resolution_buffer import bounds_for_cache
 from glue.core.exceptions import IncompatibleAttribute
 from echo import delay_callback
+import seaborn as sns  # Heavy dependence for just clustermap
 
 import numpy as np
 
@@ -65,6 +67,8 @@ class HeatmapViewerState(ImageViewerState):
     row_subset = DDSCProperty(docstring='The subset to use for filtering rows')
     col_subset = DDSCProperty(docstring='The subset to use for filtering columns')
 
+    cluster = DDCProperty(False, docstring='Whether to cluster the histogram')
+
     def __init__(self, **kwargs):
         super().__init__()
         HeatmapViewerState.aspect.set_choices(self, ["auto"])
@@ -85,7 +89,7 @@ class HeatmapViewerState(ImageViewerState):
 
         self.add_callback('row_subset', self._update_selected_subset, echo_old=True)
         self.add_callback('col_subset', self._update_selected_subset, echo_old=True)
-
+        self.add_callback('cluster', self._do_cluster)
         self._x_categories = []
         self._y_categories = []
 
@@ -104,7 +108,7 @@ class HeatmapViewerState(ImageViewerState):
         # A callback event for row/col_subset may be triggered if the choices
         # change but the actual selection doesn't - so we avoid doing anything in
         # this case.
-        if after is not None and after is before:
+        if after is before:
             return
         # We make a subset not visible if it is the one that we use to subset
         # the data, because the subset mask is just the whole data in that 
@@ -122,8 +126,14 @@ class HeatmapViewerState(ImageViewerState):
         """
         Call this to recalculate the heatmap data if reference_data, subset,
         x_agg, or y_agg changes
-        """
 
+        What if we do something that really requires us to recalculate the heatmap
+        and we have clustering applied? Basically, whenever we recalculate this
+        we have lost the original clustering and must deactivate it.
+
+        """
+        self.cluster = False
+        #import pdb; pdb.set_trace()
         self._heatmap_data = self.reference_data[self.reference_data.main_components[0]]
         self.rows_included = np.arange(self._heatmap_data.shape[0])
         self.cols_included = np.arange(self._heatmap_data.shape[1])
@@ -158,7 +168,7 @@ class HeatmapViewerState(ImageViewerState):
                     self._sync_subsets()
 
                     return
-        else:
+        elif self._heatmap_data is None:
             self._calculate_heatmap_data()
             self._sync_subsets()
 
@@ -188,6 +198,37 @@ class HeatmapViewerState(ImageViewerState):
             # We need to adjust the limits in here to avoid triggering all
             # the update events then changing the limits again.
             self._adjust_limits_aspect()
+
+    def _do_cluster(self, *args):
+        if self.cluster:
+            data = self._heatmap_data
+            orig_xticks = self._x_categories
+            orig_yticks = self._y_categories
+
+            self.orig_coords = (orig_xticks, orig_yticks)
+            self.orig_data = data
+            g = sns.clustermap(data)
+            new_row_ind = g.dendrogram_row.reordered_ind
+            new_col_ind = g.dendrogram_col.reordered_ind
+
+            new_xticks = [orig_xticks[i] for i in new_col_ind]
+            new_yticks = [orig_yticks[i] for i in new_row_ind]
+
+            new_data = data[new_row_ind, :][:, new_col_ind]
+            self._x_categories = np.array(new_xticks)
+            self._y_categories = np.array(new_yticks)
+            self.orig_included = (self.rows_included, self.cols_included)
+            self.rows_included = self.rows_included[new_row_ind]
+            self.cols_included = self.cols_included[new_col_ind]
+
+            self._heatmap_data = new_data
+        else:
+            self._x_categories = self.orig_coords[0]
+            self._y_categories = self.orig_coords[1]
+            self.rows_included = self.orig_included[0]
+            self.cols_included = self.orig_included[1]
+
+            self._heatmap_data = self.orig_data
 
 
 class BaseHeatmapLayerState(BaseImageLayerState):
@@ -289,13 +330,13 @@ class HeatmapLayerState(BaseHeatmapLayerState, ImageLayerState):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @property
-    def x_categories(self):
-        return self.reference_data.coords.get_tick_labels("x")
+#    @property
+#    def x_categories(self):
+#        return self.reference_data.coords.get_tick_labels("x")
 
-    @property
-    def y_categories(self):
-        return self.reference_data.coords.get_tick_labels("y")
+#    @property
+#    def y_categories(self):
+#        return self.reference_data.coords.get_tick_labels("y")
 
 
 class HeatmapSubsetLayerState(BaseHeatmapLayerState, ImageSubsetLayerState):

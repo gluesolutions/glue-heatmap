@@ -40,7 +40,6 @@ class HeatmapViewer(MatplotlibHeatmapMixin, MatplotlibDataViewer):
         "select:xrange",
         "select:yrange",
         "image:contrast_bias",
-        "heatmap:cluster",
         "heatmap:subset",
     ]
 
@@ -49,6 +48,7 @@ class HeatmapViewer(MatplotlibHeatmapMixin, MatplotlibDataViewer):
             self, session, wcs=False, parent=parent, state=state
         )
         MatplotlibHeatmapMixin.setup_callbacks(self)
+        self.state.add_callback("cluster", self._update_axes)
         self._wcs_set = False
 
     def closeEvent(self, *args):
