@@ -40,7 +40,6 @@ class HeatmapViewer(MatplotlibHeatmapMixin, MatplotlibDataViewer):
         "select:xrange",
         "select:yrange",
         "image:contrast_bias",
-        "heatmap:subset",
     ]
 
     def __init__(self, session, parent=None, state=None):

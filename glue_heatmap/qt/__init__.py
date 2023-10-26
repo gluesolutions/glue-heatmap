@@ -1,6 +1,6 @@
 from .data_viewer import HeatmapViewer  # noqa
-from .subset_tool import SubsetTool  # noqa
-from ..menubar_plugin import extract_to_matrix_plugin  # noqa
+#from .subset_tool import SubsetTool  # noqa
+#from ..menubar_plugin import extract_to_matrix_plugin  # noqa
 
 
 def setup():
