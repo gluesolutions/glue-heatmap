@@ -330,14 +330,6 @@ class HeatmapLayerState(BaseHeatmapLayerState, ImageLayerState):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-#    @property
-#    def x_categories(self):
-#        return self.reference_data.coords.get_tick_labels("x")
-
-#    @property
-#    def y_categories(self):
-#        return self.reference_data.coords.get_tick_labels("y")
-
 
 class HeatmapSubsetLayerState(BaseHeatmapLayerState, ImageSubsetLayerState):
     """

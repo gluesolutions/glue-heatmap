@@ -16,9 +16,6 @@ def demo():
     values = qtl_matrix[strain_names].values.T
     marker_names = qtl_matrix["marker.id"].values
 
-    # strain_array = np.array([strain_names for x in range(values.shape[1])]).T
-    # marker_array = np.array([marker_names for x in range(values.shape[0])])
-
     heatmap_data = Data(
         values=values,
         label="test",
