@@ -149,16 +149,7 @@ class HeatmapViewerState(ImageViewerState):
 
     def _set_reference_data(self):
         """
-        In the case of tabular data, this is where we make
-        the dataset. In the case of a 2D matrix, this
-        is where we make a copy of the dataset so that
-        clustering the data...
-
-        Well, do we want clustering the data to change
-        anything in the original data? Not really, it's
-        cosmetic, right?
         """
-
         if self.reference_data is None:
             for layer in self.layers:
                 if isinstance(layer.layer, BaseData):
@@ -200,6 +191,10 @@ class HeatmapViewerState(ImageViewerState):
 
 
 class BaseHeatmapLayerState(BaseImageLayerState):
+
+    # This can be dramatically simplified if we assume we do not
+    # need all the slicing stuff -- although the name probably needs to
+    # stay the same, which is slightly anacronistic
 
     def get_sliced_data(self, view=None, bounds=None):
         """
@@ -293,10 +288,6 @@ class HeatmapLayerState(BaseHeatmapLayerState, ImageLayerState):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-    # This can be dramatically simplified if we assume we do not
-    # need all the slicing stuff -- although the name probably needs to
-    # stay the same, which is slightly anacronistic
 
     @property
     def x_categories(self):
