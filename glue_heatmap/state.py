@@ -19,7 +19,8 @@ from glue.utils import unbroadcast
 from glue.core.fixed_resolution_buffer import bounds_for_cache
 from glue.core.exceptions import IncompatibleAttribute
 from echo import delay_callback
-import seaborn as sns  # Heavy dependence for just clustermap
+from scipy.cluster import hierarchy
+import fastcluster
 
 import numpy as np
 
@@ -207,9 +208,13 @@ class HeatmapViewerState(ImageViewerState):
 
             self.orig_coords = (orig_xticks, orig_yticks)
             self.orig_data = data
-            g = sns.clustermap(data)
-            new_row_ind = g.dendrogram_row.reordered_ind
-            new_col_ind = g.dendrogram_col.reordered_ind
+
+            row_linkage = fastcluster.linkage_vector(data, method='ward', metric='euclidean')
+            row_dendro = hierarchy.dendrogram(row_linkage, no_plot=True)
+            col_linkage = fastcluster.linkage_vector(data.T, method='ward', metric='euclidean')
+            col_dendro = hierarchy.dendrogram(col_linkage, no_plot=True)
+            new_row_ind = row_dendro['leaves']
+            new_col_ind = col_dendro['leaves']
 
             new_xticks = [orig_xticks[i] for i in new_col_ind]
             new_yticks = [orig_yticks[i] for i in new_row_ind]
