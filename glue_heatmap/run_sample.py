@@ -2,7 +2,7 @@ import pandas as pd
 from glue.core import Data, DataCollection
 from glue_qt.viewers.scatter import ScatterViewer
 from glue.app.qt import GlueApplication
-from glue.core.link_helpers import LinkSame, JoinLink
+from glue.core.link_helpers import JoinLink
 from glue.core.joins import get_mask_with_key_joins
 
 from glue_heatmap.coords import HeatmapCoordinates
@@ -52,11 +52,11 @@ def demo():
     # Using JoinLinks on both rows and cols causes all subsets to propagate through the matrix
     # which is not ideal. In real usage this is probably a DataAnnData object
     marker_link = JoinLink(cids1=[heatmap_data.id["Marker Name"]], cids2=[markers.id["markers"]], data1=heatmap_data, data2=markers)
-    #marker_link = LinkSame(heatmap_data.id["Marker Name"], markers.id["markers"])
+    # marker_link = LinkSame(heatmap_data.id["Marker Name"], markers.id["markers"])
     dc.add_link(marker_link)
 
     strain_link = JoinLink(cids1=[heatmap_data.id["Parent Strain"]], cids2=[strains.id["strain"]], data1=heatmap_data, data2=strains)
-    #strain_link = LinkSame(heatmap_data.id["Parent Strain"], strains.id["strain"])
+    # strain_link = LinkSame(heatmap_data.id["Parent Strain"], strains.id["strain"])
     dc.add_link(strain_link)
 
     t = ga.new_data_viewer(HeatmapViewer)

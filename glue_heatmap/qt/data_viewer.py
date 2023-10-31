@@ -1,12 +1,7 @@
-# TODO: Do we need to make custom versions of these? If so, we might need to import them
-# Import the mouse mode to make sure it gets registered
-# from glue.viewers.image.qt.contrast_mouse_mode import ContrastBiasMode  # noqa
-# from glue.viewers.image.qt.pixel_selection_mode import PixelSelectionTool  # noqa
-
 
 from glue.utils import defer_draw, decorate_all_methods
-from glue.viewers.matplotlib.qt.data_viewer import MatplotlibDataViewer
-from glue.viewers.image.qt.mouse_mode import RoiClickAndDragMode
+from glue_qt.viewers.matplotlib.data_viewer import MatplotlibDataViewer
+from glue_qt.viewers.image.mouse_mode import RoiClickAndDragMode
 
 from glue_heatmap.qt.layer_style_editor import HeatmapLayerStyleEditor
 from glue_heatmap.qt.layer_style_editor_subset import HeatmapLayerSubsetStyleEditor

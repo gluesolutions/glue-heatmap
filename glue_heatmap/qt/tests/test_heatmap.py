@@ -1,12 +1,13 @@
 from ..data_viewer import HeatmapViewer
 from glue.app.qt import GlueApplication
+from glue.core.state import GlueUnSerializer
 from glue.core.data import Data
 import numpy as np
 
 from glue_heatmap.coords import HeatmapCoordinates
 
 
-class TestSmallMultiplesViewer(object):
+class TestHeatmapViewer(object):
     def setup_method(self, method):
         self.app = GlueApplication()
         self.session = self.app.session
@@ -32,3 +33,27 @@ class TestSmallMultiplesViewer(object):
 
     def test_basic(self):
         assert self.viewer is not None
+        assert self.viewer.state.x_att_world is self.data.id["Marker Name"]
+        assert self.viewer.state.y_att_world is self.data.id["Parent Strain"]
+        assert self.viewer.state.cluster is False
+        assert self.viewer.state.row_subset is None
+        assert self.viewer.state.col_subset is None
+
+    def test_save_and_restore(self, tmpdir):
+        #self.viewer.state.cluster = True
+
+        filename = tmpdir.join("test_heatmap_session.glu").strpath
+
+        self.session.application.save_session(filename)
+
+        with open(filename, "r") as f:
+            session = f.read()
+
+        state = GlueUnSerializer.loads(session)
+
+        ga = state.object("__main__")
+
+        viewer = ga.viewers[0][0]
+        #assert viewer.state.cluster is True
+        assert viewer.state.x_att_world.label == "Marker Name"
+        ga.close()

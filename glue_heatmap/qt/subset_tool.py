@@ -5,7 +5,7 @@ from glue.core.state_objects import State
 from echo.qt import autoconnect_callbacks_to_qt
 from qtpy.QtWidgets import QMessageBox
 import numpy as np
-from glue.utils.qt import load_ui
+from glue_qt.utils import load_ui
 from glue.core.data import Data
 from glue_heatmap.coords import HeatmapCoordinates
 from echo import SelectionCallbackProperty

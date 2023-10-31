@@ -37,7 +37,7 @@ class HeatmapCoordinates(IdentityCoordinates):
 
     @classmethod
     def __setgluestate__(cls, rec, context):
-        return cls(x_tick_names=rec['x_tick_names'],
-                   y_tick_names=rec['y_tick_names'],
+        return cls(context.object(rec['x_tick_names']),
+                   context.object(rec['y_tick_names']),
                    x_tick_label=rec['x_tick_label'],
                    y_tick_label=rec['y_tick_label'])

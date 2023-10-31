@@ -5,7 +5,7 @@ from qtpy.QtCore import Qt
 
 
 from echo.qt import autoconnect_callbacks_to_qt
-from glue.utils.qt import load_ui
+from glue_qt.utils import load_ui
 from glue.core import Data, BaseData
 from glue.core.state_objects import State
 from echo import SelectionCallbackProperty
