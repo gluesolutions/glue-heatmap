@@ -4,8 +4,7 @@ import math
 
 from matplotlib.ticker import FixedLocator, FuncFormatter
 from glue.core.util import tick_linker
-from glue.core.subset import roi_to_subset_state, CategoricalROISubsetState
-from glue.core.roi import RangeROI
+from glue.core.subset import roi_to_subset_state
 
 from glue_heatmap.layer_artist import HeatmapLayerArtist, HeatmapSubsetLayerArtist
 
@@ -123,31 +122,6 @@ class MatplotlibHeatmapMixin(MatplotlibImageMixin):
         ):
             return
 
-        # This is a hack to avoid the undesireable behavior where a RangeROI
-        # on x or y will cover all the joined_on_key values in the other
-        # dimension. We "solve" this by attempting to convert the ROI
-        # to be defined over these joined_on_key values instead, and since
-        # we already disallow subsets from propogating through the matrix
-        # this stops them from propogating.
-
-        # This behaviour is not great if the dataset that is joined to the
-        # heatmap matrix is not one-to-one. In that case it's best for the
-        # datasets to be joined through regular links anyway. 
-        #if isinstance(roi, RangeROI):
-        #    if roi.ori == 'x':
-        #        att = self.state.x_att_world
-        #        att_pix = self.state.x_att
-        #        categories = self.state.x_categories
-        #    else:
-        #        att = self.state.y_att_world
-        #        att_pix = self.state.y_att
-        #        categories = self.state.y_categories
-        #    for other, (cid1, cid2) in self.state.reference_data._key_joins.items():
-        #        if len(cid1) == 1 and len(cid2) == 1:
-        #            if cid1[0] is att or cid1[0] is att_pix:
-        #                att = cid2[0]
-        #    subset_state = CategoricalROISubsetState.from_range(categories, att, roi.min, roi.max)
-        #else:
         subset_state = roi_to_subset_state(
                 roi,
                 x_att=self.state.x_att_world,

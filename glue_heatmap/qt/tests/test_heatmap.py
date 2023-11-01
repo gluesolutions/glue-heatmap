@@ -40,7 +40,6 @@ class TestHeatmapViewer(object):
         assert self.viewer.state.col_subset is None
 
     def test_save_and_restore(self, tmpdir):
-        #self.viewer.state.cluster = True
 
         filename = tmpdir.join("test_heatmap_session.glu").strpath
 
@@ -54,6 +53,5 @@ class TestHeatmapViewer(object):
         ga = state.object("__main__")
 
         viewer = ga.viewers[0][0]
-        #assert viewer.state.cluster is True
         assert viewer.state.x_att_world.label == "Marker Name"
         ga.close()
