@@ -1,5 +1,18 @@
 1.0 - Initial release
 
+## v2.0 - 2023-11-01
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+### What's Changed
+
+- New model for Heatmap viewer that separates the array being plotted from the underlying Data objects.
+- Support for displaying 2D matrices as Heatmap objects
+- Allow subsetting of 2D matrices by row and col subsets
+- Cluster Heatmap now works more reliably (moved from toolbar to viewer options)
+- Heatmap Viewers now work on save/restore
+
+**Full Changelog**: https://github.com/gluesolutions/glue-heatmap/compare/v1.1.0...v2.0
+
 ## v1.1.0 - 2023-06-13
 
 v1.1.0
