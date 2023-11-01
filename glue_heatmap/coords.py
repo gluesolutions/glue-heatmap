@@ -5,8 +5,8 @@ from glue.core.coordinates import IdentityCoordinates
 class HeatmapCoordinates(IdentityCoordinates):
     def __init__(self, x_tick_names, y_tick_names, x_tick_label, y_tick_label, *args, **kwargs):
         super().__init__(n_dim=2)
-        self._x_tick_names = np.array(x_tick_names)
-        self._y_tick_names = np.array(y_tick_names)
+        self._x_tick_names = np.array(x_tick_names).astype(str)
+        self._y_tick_names = np.array(y_tick_names).astype(str)
         self._names = [self._x_tick_names, self._y_tick_names]
         self._x_tick_label = x_tick_label
         self._y_tick_label = y_tick_label
