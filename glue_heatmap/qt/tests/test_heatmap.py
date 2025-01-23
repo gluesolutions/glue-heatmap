@@ -1,5 +1,5 @@
 from ..data_viewer import HeatmapViewer
-from glue.app.qt import GlueApplication
+from glue_qt.app import GlueApplication
 from glue.core.state import GlueUnSerializer
 from glue.core.data import Data
 import numpy as np
