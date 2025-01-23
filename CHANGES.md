@@ -1,5 +1,9 @@
 1.0 - Initial release
 
+## v2.1 - 2025-01-23
+
+Update to work with numpy>=2.0
+
 ## v2.0 - 2023-11-01
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
