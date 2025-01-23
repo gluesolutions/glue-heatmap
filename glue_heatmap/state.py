@@ -15,8 +15,7 @@ from glue.utils import unbroadcast
 from glue.core.fixed_resolution_buffer import bounds_for_cache
 from glue.core.exceptions import IncompatibleAttribute
 from echo import delay_callback
-from scipy.cluster import hierarchy
-import fastcluster
+from scipy.cluster.hierarchy import linkage, dendrogram
 
 import numpy as np
 
@@ -209,10 +208,10 @@ class HeatmapViewerState(ImageViewerState):
             self.orig_coords = (orig_xticks, orig_yticks)
             self.orig_data = data
 
-            row_linkage = fastcluster.linkage_vector(data, method='ward', metric='euclidean')
-            row_dendro = hierarchy.dendrogram(row_linkage, no_plot=True)
-            col_linkage = fastcluster.linkage_vector(data.T, method='ward', metric='euclidean')
-            col_dendro = hierarchy.dendrogram(col_linkage, no_plot=True)
+            row_linkage = linkage(data, method='ward', metric='euclidean')
+            row_dendro = dendrogram(row_linkage, no_plot=True)
+            col_linkage = linkage(data.T, method='ward', metric='euclidean')
+            col_dendro = dendrogram(col_linkage, no_plot=True)
             new_row_ind = row_dendro['leaves']
             new_col_ind = col_dendro['leaves']
 

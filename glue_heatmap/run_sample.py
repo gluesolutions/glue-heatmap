@@ -1,7 +1,7 @@
 import pandas as pd
 from glue.core import Data, DataCollection
 from glue_qt.viewers.scatter import ScatterViewer
-from glue.app.qt import GlueApplication
+from glue_qt.app import GlueApplication
 from glue.core.link_helpers import JoinLink
 from glue.core.joins import get_mask_with_key_joins
 

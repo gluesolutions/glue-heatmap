@@ -215,7 +215,7 @@ class ExtractToMatrixDialog(QDialog):
 
 if __name__ == "__main__":
     from glue.core import DataCollection
-    from glue.utils.qt import get_qapp
+    from glue_qt.utils import get_qapp
 
     data1 = Data(
         genes=["g1", "g2", "g3", "g4"],
