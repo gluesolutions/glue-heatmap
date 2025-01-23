@@ -52,6 +52,6 @@ class TestHeatmapViewer(object):
 
         ga = state.object("__main__")
 
-        viewer = ga.viewers[0][0]
+        viewer = ga.viewers[0]
         assert viewer.state.x_att_world.label == "Marker Name"
         ga.close()
