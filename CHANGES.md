@@ -1,5 +1,9 @@
 1.0 - Initial release
 
+## v2.1.1 - 2025-01-24
+
+Fix a broken test
+
 ## v2.1 - 2025-01-23
 
 Update to work with numpy>=2.0
