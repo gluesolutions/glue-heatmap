@@ -40,7 +40,7 @@ jobs:
       envs: |
         # Standard tests
         - linux: py310-test-pyqt6
-        - linux: py311-test-dev-pyqt6
+        - linux: py311-test-pyqt6
 
         - macos: py310-test-pyqt6
 
